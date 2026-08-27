@@ -1,0 +1,90 @@
+{
+  "preprocessed_root": "results/preprocessed_data_10min",
+  "baseline_root": "results/local_weather_hazard_baselines",
+  "graph_root": "results/hierarchical_sparse_lag_graph",
+  "stability_root": "results/stable_graph_causal_budget",
+  "audit_output_root": "results/deep_model_experiments/model_contract_audit",
+  "cache_root": "results/deep_model_experiments/cache",
+  "local_output_root": "results/deep_model_experiments/local_baselines",
+  "extension_output_root": "results/deep_model_experiments/recurrent_barrier_extensions",
+  "extension_warning_output_root": "results/deep_model_experiments/recurrent_barrier_warning",
+  "graph_gate_output_root": "results/deep_model_experiments/stable_graph_gate",
+  "warning_output_root": "results/deep_model_experiments/event_warning",
+  "scheme": "development",
+  "history_hours": 24,
+  "horizon_steps": 36,
+  "step_minutes": 10,
+  "continuous_clip_z": 10.0,
+  "sampling": {
+    "seed": 20260807,
+    "hard_negative_target": 60000,
+    "easy_negative_target": 60000
+  },
+  "stable_graph_diagnostics": {
+    "coefficient_threshold": 0.0001,
+    "prediction_stride": 10,
+    "years": [2023, 2024]
+  },
+  "models": {
+    "gru_hidden_size": 32,
+    "tcn_channels": 32,
+    "tcn_kernel_size": 3,
+    "tcn_dilations": [1, 2, 4, 8, 16, 32],
+    "dropout": 0.2,
+    "horizon_embedding_dim": 8,
+    "initial_log_rate": -9.0
+  },
+  "training": {
+    "seeds": [20260807, 20260817, 20260827, 20260837, 20260847],
+    "batch_size": 128,
+    "maximum_epochs": 12,
+    "early_stopping_patience": 7,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "gradient_clip_norm": 5.0,
+    "hard_negative_loss_multiplier": 1.0,
+    "early_stopping_validation_samples": 20000,
+    "development_metric_samples": 120000,
+    "torch_num_threads": 4
+  },
+  "warning_evaluation": {
+    "year": 2023,
+    "inference_batch_size": 512,
+    "bootstrap_samples": 1000,
+    "bootstrap_seed": 20260807,
+    "prediction_compression_level": 1,
+    "matched_false_alarm_diagnostic": {
+      "enabled": true,
+      "target_hours_per_station_month": 10.0
+    }
+  },
+  "extension_experiment": {
+    "encoder": "gru",
+    "barrier_regularization": {
+      "city_l2": 0.0001,
+      "station_l2": 0.001
+    },
+    "variants": {
+      "gru_recurrent_control": {
+        "masked_features": [],
+        "negative_sampling": "hard_negative_enriched",
+        "hierarchical_barrier": false
+      },
+      "gru_no_recurrent_history": {
+        "masked_features": ["time_since_last_icing_hours", "time_since_last_icing_missing"],
+        "negative_sampling": "hard_negative_enriched",
+        "hierarchical_barrier": false
+      },
+      "gru_uniform_negative": {
+        "masked_features": [],
+        "negative_sampling": "uniform_negative",
+        "hierarchical_barrier": false
+      },
+      "gru_hierarchical_barrier": {
+        "masked_features": [],
+        "negative_sampling": "hard_negative_enriched",
+        "hierarchical_barrier": true
+      }
+    }
+  }
+}

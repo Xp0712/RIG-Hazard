@@ -1,0 +1,27 @@
+{
+  "preprocessed_root": "results/preprocessed_data_10min",
+  "output_root": "results/local_weather_hazard_baselines",
+  "scheme": "development",
+  "train_split": "train",
+  "validation_split": "validation",
+  "test_split": "test",
+  "sampling": {
+    "seed": 20260805,
+    "hard_negative_target": 60000,
+    "easy_negative_target": 60000
+  },
+  "optimization": {
+    "l2": 0.0001,
+    "max_iter": 250,
+    "tolerance": 1e-7,
+    "continuous_clip_z": 10.0
+  },
+  "warning": {
+    "horizon_hours": 6,
+    "false_alarm_hours_per_station_month": 10.0,
+    "minimum_consecutive_alarm_bins": 2,
+    "alarm_merge_gap_minutes": 20,
+    "maximum_silence_before_event_minutes": 30
+  },
+  "prediction_compression_level": 1
+}

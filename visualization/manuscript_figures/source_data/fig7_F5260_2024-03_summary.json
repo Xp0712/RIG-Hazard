@@ -1,0 +1,16 @@
+{
+  "station_code": "F5260",
+  "station_name": "泉州九仙山永安岩",
+  "station_month": "2024-03",
+  "events": 4,
+  "hits_at_10h": 3,
+  "misses_at_10h": 1,
+  "contains_false_alarm_capacity": true,
+  "contains_unsettled_capacity": true,
+  "contains_true_release": true,
+  "locked_true_policy": false,
+  "selected_parameter_sha256": "3518056265913b09246feeab3dbd7d344481aee2adcd0106aa5a5a142112929f",
+  "trajectory_sha256": "0e2846c079deb9bb67f74f24a29a7b221d02450b97b6b51985312b5a873c2818",
+  "event_table_sha256": "b9d8f6f6b4ccaa32694ff367e1de56436ad62832d22ed08699f8b9912f036a29",
+  "controller_contract_version": "uadhbac-causal-reserve-v1"
+}

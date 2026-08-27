@@ -1,0 +1,201 @@
+{
+  "preprocessed_root": "results/preprocessed_data_10min",
+  "baseline_root": "results/local_weather_hazard_baselines",
+  "cache_root": "results/recurrence_analysis/model_comparison/cache",
+  "deep_protocol_output_root": "results/icing_model_experiments/weather_ablation",
+  "local_output_root": "results/icing_model_experiments/local_weather_validation",
+  "scheme": "development",
+  "history_hours": 24,
+  "horizon_steps": 36,
+  "step_minutes": 10,
+  "sampling": {
+    "seed": 20260807,
+    "hard_negative_target": 60000,
+    "easy_negative_target": 60000
+  },
+  "models": {
+    "gru_hidden_size": 32,
+    "tcn_channels": 32,
+    "tcn_kernel_size": 3,
+    "tcn_dilations": [1, 2, 4, 8, 16, 32],
+    "dropout": 0.1,
+    "horizon_embedding_dim": 8,
+    "initial_log_rate": -9.0
+  },
+  "dual_weather_model": {
+    "fast_steps": 18,
+    "slow_bucket_steps": 3,
+    "fast_hidden_size": 12,
+    "slow_hidden_size": 12,
+    "output_size": 16,
+    "dropout": 0.1,
+    "recurrence_hidden_size": 8,
+    "gate_penalty_weight": 0.001,
+    "slow_aggregation": "causal_nonoverlapping_mean",
+    "weather_feature_names": [
+      "temperature_mean",
+      "temperature_min",
+      "temperature_max",
+      "temperature_change_30m",
+      "rh_mean",
+      "rh_min",
+      "rh_max",
+      "rh_change_30m",
+      "visibility_mean",
+      "visibility_min",
+      "visibility_change_30m",
+      "visibility_10min_mean",
+      "visibility_10min_min",
+      "fog_fraction",
+      "precipitation_fraction",
+      "snow_fraction",
+      "freezing_rain_fraction",
+      "wind_speed_mean",
+      "wind_speed_max",
+      "wind_direction_sin",
+      "wind_direction_cos",
+      "exposure_fraction_1h",
+      "exposure_e1_cold_humid",
+      "exposure_e2_fog_low_visibility",
+      "exposure_e3_any",
+      "exposure_recent_1h",
+      "time_since_risk_entry_hours",
+      "temperature_missing",
+      "rh_missing",
+      "wind_speed_missing",
+      "wind_direction_missing",
+      "visibility_missing"
+    ]
+  },
+  "protocol_model_variants": {
+    "gru_weather_reference": {
+      "encoder": "gru_subset",
+      "hidden_size": 24,
+      "included_features": [
+        "temperature_mean",
+        "temperature_min",
+        "temperature_max",
+        "temperature_change_30m",
+        "rh_mean",
+        "rh_min",
+        "rh_max",
+        "rh_change_30m",
+        "visibility_mean",
+        "visibility_min",
+        "visibility_change_30m",
+        "visibility_10min_mean",
+        "visibility_10min_min",
+        "fog_fraction",
+        "precipitation_fraction",
+        "snow_fraction",
+        "freezing_rain_fraction",
+        "wind_speed_mean",
+        "wind_speed_max",
+        "wind_direction_sin",
+        "wind_direction_cos",
+        "exposure_fraction_1h",
+        "exposure_e1_cold_humid",
+        "exposure_e2_fog_low_visibility",
+        "exposure_e3_any",
+        "exposure_recent_1h",
+        "time_since_risk_entry_hours",
+        "temperature_missing",
+        "rh_missing",
+        "wind_speed_missing",
+        "wind_direction_missing",
+        "visibility_missing"
+      ],
+      "parameter_target": 4897,
+      "parameter_tolerance": 0.10
+    },
+    "fast_weather_encoder": {
+      "encoder": "weather_fast",
+      "parameter_target": 4897,
+      "parameter_tolerance": 0.10,
+      "encoder_config": {
+        "fast_hidden_size": 23,
+        "output_size": 16
+      }
+    },
+    "slow_weather_encoder": {
+      "encoder": "weather_slow",
+      "parameter_target": 4897,
+      "parameter_tolerance": 0.10,
+      "encoder_config": {
+        "slow_hidden_size": 23,
+        "output_size": 16
+      }
+    },
+    "dual_weather_encoder": {
+      "encoder": "weather_dual",
+      "parameter_target": 4897,
+      "parameter_tolerance": 0.10
+    },
+    "dual_weather_recurrence": {
+      "encoder": "weather_dual_rec",
+      "parameter_target": 4897,
+      "parameter_tolerance": 0.25
+    },
+    "gated_dual_weather_recurrence": {
+      "encoder": "weather_dual_rec_gate",
+      "parameter_target": 4897,
+      "parameter_tolerance": 0.25
+    }
+  },
+  "default_local_models": [
+    "gru_weather_reference",
+    "fast_weather_encoder",
+    "slow_weather_encoder",
+    "dual_weather_encoder"
+  ],
+  "training": {
+    "seeds": [20260807, 20260817, 20260827, 20260837, 20260847],
+    "batch_size": 64,
+    "maximum_epochs": 30,
+    "early_stopping_patience": 7,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "gradient_clip_norm": 5.0,
+    "hard_negative_loss_multiplier": 1.0,
+    "early_stopping_validation_samples": 20000,
+    "development_metric_samples": 120000,
+    "torch_num_threads": 4
+  },
+  "prediction_contract": {
+    "save_full_trajectory": false,
+    "export_selected_ensemble_full_trajectory": true,
+    "storage_note": "Candidate runs retain 6h row scores plus 36-step metrics; only the 2022-selected five-seed ensemble is exported row-wise at all 36 steps.",
+    "dtype": "float32",
+    "keys": ["origin_id", "file_id", "row_index", "issue_time_ns"]
+  },
+  "evaluation": {
+    "save_full_curve_metrics": true,
+    "primary_horizon_step": 36,
+    "bootstrap_samples": 5000,
+    "bootstrap_cluster": "station"
+  },
+  "nested_alert": {
+    "ema_alpha": [1.0, 0.5, 0.25],
+    "minimum_consecutive_bins": [1, 2, 3],
+    "hold_minutes": [30, 60, 120],
+    "merge_gap_minutes": [20, 40, 60],
+    "budgets_hours_per_station_month": [2, 5, 10, 20]
+  },
+  "warning": {
+    "horizon_hours": 6,
+    "false_alarm_hours_per_station_month": 10.0,
+    "minimum_consecutive_alarm_bins": 1,
+    "alarm_merge_gap_minutes": 0,
+    "maximum_silence_before_event_minutes": 360
+  },
+  "experiment_contract": {
+    "document": "icing_model_experiment_protocol_cn.docx",
+    "reuse_completed_models": true,
+    "reference_gru_model": "gru_weather_reference",
+    "reference_gru_root": "results/icing_model_experiments/weather_ablation",
+    "reused_fair_baseline_root": "results/recurrence_modeling/fair_baselines",
+    "selection_year": 2022,
+    "frozen_evaluation_years": [2023, 2024],
+    "evaluation_year_2024_role": "retrospectively_locked"
+  }
+}

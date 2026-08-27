@@ -1,0 +1,39 @@
+{
+  "graph_experiment_root": "results/hierarchical_sparse_lag_graph",
+  "output_root": "results/stable_graph_causal_budget",
+  "include_unseen_test_stations": true,
+  "stability": {
+    "replicates": 20,
+    "block_fraction": 0.7,
+    "selection_frequency": 0.7,
+    "coefficient_threshold": 1e-4,
+    "seed": 20260806,
+    "max_iter": 160,
+    "refit_max_iter": 250,
+    "tolerance": 1e-10
+  },
+  "calibration_year": 2023,
+  "evaluation_years": [2023, 2024],
+  "budget_control": {
+    "selection_year": 2023,
+    "trailing_history_days": 30,
+    "candidate_quantile_grid": [0.9, 0.92, 0.94, 0.96, 0.98, 0.99],
+    "utility_tie_hours": 0.05,
+    "minimum_history_rows": 144,
+    "burst_allowance_hours": 1.0,
+    "minimum_candidate_run_bins": 2,
+    "minimum_alarm_run_bins": 2
+  },
+  "warning": {
+    "horizon_hours": 6,
+    "false_alarm_hours_per_station_month": 10.0,
+    "minimum_consecutive_alarm_bins": 2,
+    "alarm_merge_gap_minutes": 20,
+    "maximum_silence_before_event_minutes": 30
+  },
+  "bootstrap": {
+    "samples": 1000,
+    "seed": 20260806
+  },
+  "prediction_compression_level": 1
+}

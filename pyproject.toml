@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rig-hazard"
+version = "0.1.0"
+description = "Recurrent icing hazard modelling and hard-budget alert evaluation"
+requires-python = ">=3.10"
+
+[project.scripts]
+rig-hazard = "rig_hazard.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = [
+  ".python_deps",
+  "data",
+  "results",
+]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.format]
+docstring-code-format = true
+line-ending = "lf"
+quote-style = "double"

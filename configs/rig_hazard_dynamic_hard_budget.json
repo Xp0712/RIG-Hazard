@@ -1,0 +1,85 @@
+{
+  "base_config": "configs/rig_hazard_recurrence_modeling.json",
+  "alert_governance_config": "configs/rig_hazard_alert_governance.json",
+  "cache_root": "results/recurrence_analysis/model_comparison/cache",
+  "event_table": "results/recurrence_modeling/seasonal_recurrence/event_global_seasonal_mapping.csv",
+  "trajectory_root": "results/dynamic_hard_budget/local_weather_hazard_trajectory",
+  "baseline_selection_file": "results/alert_governance/strategy_comparison/selected_policies.csv",
+  "output_root": "results/dynamic_hard_budget/experiments",
+  "theory_source_root": "results/dynamic_hard_budget/experiments",
+  "model": "local_weather_hazard",
+  "frozen_artifact_model": "rec_none",
+  "step_minutes": 10,
+  "horizon_steps": 36,
+  "budgets_hours": [2, 5, 10, 20],
+  "dense_budgets_hours": [1, 2, 3, 5, 7, 10, 15, 20, 30],
+  "primary_budgets_hours": [5, 10],
+  "primary_queue": "operational",
+  "primary_metric": "operational_lead_utility_hours",
+  "selection_year": 2022,
+  "locked_years": [2023, 2024],
+  "expected_queue_sizes": {
+    "2023": {"operational": 113, "complete": 84},
+    "2024": {"operational": 170, "complete": 116}
+  },
+  "controller": {
+    "utility": "linear",
+    "price_initial": 0.0,
+    "pacing_slack_bins": 1,
+    "deduplication_bins": 2,
+    "couple_budgets": true
+  },
+  "selection_grid": {
+    "utility_score_quantiles": [0.90, 0.95, 0.98],
+    "price_learning_rates": [1.0, 2.0],
+    "pending_pressures": [0.5, 1.0]
+  },
+  "hard_guard_baselines": [
+    "fixed_threshold",
+    "hysteresis",
+    "rolling_quantile"
+  ],
+  "online_baselines": [
+    "uniform_pacing",
+    "risk_greedy",
+    "utility_static",
+    "primal_dual"
+  ],
+  "standard_algorithm_baselines": {
+    "dual_mirror_descent": {
+      "eta_scales": [0.5, 1.0, 2.0]
+    },
+    "switch_over_knapsack": {
+      "high_quantiles": [0.95, 0.98],
+      "low_quantiles": [0.90, 0.95],
+      "switch_fractions": [0.50, 0.75]
+    }
+  },
+  "ablations": [
+    "dynamic_without_lead_utility",
+    "dynamic_without_budget_pricing",
+    "dynamic_without_remaining_time",
+    "dynamic_without_pending_reserve",
+    "dynamic_without_reserve_release",
+    "dynamic_without_event_dedup",
+    "dynamic_without_budget_coupling",
+    "dynamic_with_F6_only"
+  ],
+  "bootstrap": {
+    "samples": 5000,
+    "seed": 20260825,
+    "comparators": [
+      "budget_safe",
+      "original_simple",
+      "utility_static_hard_guard",
+      "primal_dual_hard_guard"
+    ]
+  },
+  "utility_sensitivity": [
+    "linear",
+    "saturating_3h",
+    "hit_only",
+    "business_piecewise"
+  ],
+  "window_sensitivity_steps": [6, 18, 36]
+}

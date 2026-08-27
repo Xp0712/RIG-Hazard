@@ -1,0 +1,128 @@
+{
+  "cache_root": "results/recurrence_analysis/model_comparison/cache",
+  "seasonal_event_mapping": "results/recurrence_modeling/seasonal_recurrence/event_global_seasonal_mapping.csv",
+  "step_minutes": 10,
+  "nested_alert_audit": {
+    "source_root": "results/icing_model_experiments/nested_alert",
+    "protocol_root": "results/icing_model_experiments/weather_ablation",
+    "output_root": "results/alert_governance/nested_alert_audit"
+  },
+  "xgboost_baseline": {
+    "output_root": "results/alert_governance/xgboost_baseline",
+    "model_name": "xgboost",
+    "seed": 20260807,
+    "folds": 5,
+    "batch_size": 4096,
+    "n_estimators": 350,
+    "max_depth": 6,
+    "learning_rate": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "min_child_weight": 5.0,
+    "reg_lambda": 2.0,
+    "reg_alpha": 0.0,
+    "positive_weight_multiplier": 1.0,
+    "device": "cuda",
+    "n_jobs": 8,
+    "masked_features": [
+      "time_since_last_recurrent_event_hours",
+      "current_event_order",
+      "events_past_7d",
+      "events_past_30d",
+      "previous_event_duration_hours",
+      "previous_event_max_thickness",
+      "previous_event_severity",
+      "previous_recurrent_event_missing"
+    ]
+  },
+  "strategy_comparison": {
+    "output_root": "results/alert_governance/strategy_comparison",
+    "budgets_hours": [2, 5, 10, 20],
+    "absolute_quantiles": [0.8, 0.9, 0.94, 0.96, 0.98, 0.99, 0.995, 0.998],
+    "rolling_quantiles": [0.9, 0.94, 0.96, 0.98, 0.99, 0.995, 0.998],
+    "trailing_history_days": 30,
+    "minimum_history_rows": 144,
+    "hysteresis_ema_alpha": 0.5,
+    "hysteresis_off_ratios": [0.6, 0.8],
+    "minimum_consecutive_bins": 2,
+    "hold_bins": 3,
+    "original_burst_hours": 1.0,
+    "safe_burst_hours": 0.0,
+    "safe_pace_multiplier": 1.0,
+    "bootstrap_samples": 5000,
+    "bootstrap_seed": 20260824,
+    "models": [
+      {
+        "name": "rec_none",
+        "prediction_name": "rec_none",
+        "role": "locked_main_probability_model",
+        "root": "results/recurrence_modeling/probability_models",
+        "seeds": [20260807, 20260817, 20260827, 20260837, 20260847]
+      },
+      {
+        "name": "gru",
+        "prediction_name": "fair_gru",
+        "role": "locked_deep_baseline",
+        "root": "results/recurrence_modeling/fair_baselines",
+        "seeds": [20260807, 20260817, 20260827, 20260837, 20260847]
+      },
+      {
+        "name": "timesnet",
+        "prediction_name": "fair_timesnet",
+        "role": "locked_deep_baseline",
+        "root": "results/recurrence_modeling/fair_baselines",
+        "seeds": [20260807, 20260817, 20260827, 20260837, 20260847]
+      },
+      {
+        "name": "xgboost",
+        "prediction_name": "xgboost",
+        "role": "new_tabular_controller_independence_baseline",
+        "root": "results/alert_governance/xgboost_baseline",
+        "seeds": [20260807]
+      }
+    ]
+  },
+  "public_benchmarks": {
+    "output_root": "results/alert_governance/public_recurrence_benchmarks",
+    "seed": 20260807,
+    "maximum_training_rows": 1000000,
+    "absolute_quantiles": [0.8, 0.9, 0.94, 0.96, 0.98, 0.99, 0.995, 0.998],
+    "rolling_quantiles": [0.9, 0.94, 0.96, 0.98, 0.99, 0.995, 0.998],
+    "trailing_history_days": 30,
+    "minimum_history_rows": 24,
+    "xgboost": {
+      "n_estimators": 300,
+      "max_depth": 6,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "min_child_weight": 5,
+      "reg_lambda": 2.0,
+      "device": "cuda",
+      "n_jobs": 8
+    },
+    "ecommerce": {
+      "source": "data/public_benchmarks/2019-Nov.csv.gz",
+      "maximum_entities": 5000,
+      "step_minutes": 60,
+      "horizon_bins": 6,
+      "start": "2019-11-01",
+      "train_end": "2019-11-19",
+      "selection_end": "2019-11-25",
+      "test_end": "2019-12-01",
+      "budgets_hours": [4, 8, 16, 32]
+    },
+    "us_accidents": {
+      "source": "data/public_benchmarks/US_Accidents_March23.csv.gz",
+      "maximum_entities": 1500,
+      "grid_degrees": 0.05,
+      "step_minutes": 1440,
+      "horizon_bins": 7,
+      "start": "2016-01-01",
+      "train_end": "2021-01-01",
+      "selection_end": "2022-01-01",
+      "test_end": "2023-04-01",
+      "budgets_hours": [24, 48, 96, 192]
+    }
+  }
+}

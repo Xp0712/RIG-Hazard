@@ -1,0 +1,150 @@
+{
+  "generated_at": "2026-08-27T09:09:37",
+  "backend": "Python / Matplotlib only",
+  "visual_style": "user-specified grouped palettes: six two-color pairs, one four-group set, and one five-group set",
+  "formats": [
+    "svg",
+    "pdf",
+    "png",
+    "tiff"
+  ],
+  "svg_editable_text": true,
+  "figures": {
+    "fig2": {
+      "svg": "visualization/manuscript_figures/fig2_delayed_feedback_accounting.svg",
+      "pdf": "visualization/manuscript_figures/fig2_delayed_feedback_accounting.pdf",
+      "png": "visualization/manuscript_figures/fig2_delayed_feedback_accounting.png",
+      "tiff": "visualization/manuscript_figures/fig2_delayed_feedback_accounting.tiff"
+    },
+    "fig4": {
+      "svg": "visualization/manuscript_figures/fig4_budget_performance.svg",
+      "pdf": "visualization/manuscript_figures/fig4_budget_performance.pdf",
+      "png": "visualization/manuscript_figures/fig4_budget_performance.png",
+      "tiff": "visualization/manuscript_figures/fig4_budget_performance.tiff"
+    },
+    "fig5": {
+      "svg": "visualization/manuscript_figures/fig5_utility_gain_forest.svg",
+      "pdf": "visualization/manuscript_figures/fig5_utility_gain_forest.pdf",
+      "png": "visualization/manuscript_figures/fig5_utility_gain_forest.png",
+      "tiff": "visualization/manuscript_figures/fig5_utility_gain_forest.tiff"
+    },
+    "fig6": {
+      "svg": "visualization/manuscript_figures/fig6_cross_budget_nesting.svg",
+      "pdf": "visualization/manuscript_figures/fig6_cross_budget_nesting.pdf",
+      "png": "visualization/manuscript_figures/fig6_cross_budget_nesting.png",
+      "tiff": "visualization/manuscript_figures/fig6_cross_budget_nesting.tiff"
+    },
+    "fig7": {
+      "svg": "visualization/manuscript_figures/fig7_real_station_month_case.svg",
+      "pdf": "visualization/manuscript_figures/fig7_real_station_month_case.pdf",
+      "png": "visualization/manuscript_figures/fig7_real_station_month_case.png",
+      "tiff": "visualization/manuscript_figures/fig7_real_station_month_case.tiff"
+    },
+    "fig8": {
+      "svg": "visualization/manuscript_figures/fig8_unseen_station_generalization.svg",
+      "pdf": "visualization/manuscript_figures/fig8_unseen_station_generalization.pdf",
+      "png": "visualization/manuscript_figures/fig8_unseen_station_generalization.png",
+      "tiff": "visualization/manuscript_figures/fig8_unseen_station_generalization.tiff"
+    }
+  },
+  "contracts": {
+    "fig2": {
+      "core_conclusion": "Immediate reservation plus causal settlement keeps delayed-feedback occupancy within capacity and on the alert's issue-month ledger.",
+      "archetype": "schematic-led composite",
+      "panels": {
+        "a": "capacity state machine",
+        "b": "event matching and issue-month timeline"
+      },
+      "source_data": "conceptual; no synthetic quantitative observations"
+    },
+    "fig4": {
+      "core_conclusion": "Increasing the monthly alert budget raises real-world event coverage and lead-time utility without hard-budget or nesting violations.",
+      "archetype": "quantitative grid",
+      "panels": {
+        "a": "2023 hit rate",
+        "b": "2024 hit rate",
+        "c": "2023 utility",
+        "d": "2024 utility"
+      },
+      "statistics": "frozen point estimates; operational-realistic event queue",
+      "source_data": "source_data/fig4_budget_performance.csv"
+    },
+    "fig5": {
+      "core_conclusion": "UAD-HBAC has positive frozen lead-time utility gains over all three baselines, with seven of eight standard-baseline comparisons remaining significant after Holm correction.",
+      "archetype": "clinical-triptych forest plot",
+      "panels": {
+        "a": "budget-safe",
+        "b": "dual mirror descent",
+        "c": "switch-over knapsack"
+      },
+      "statistics": "5000 paired station-cluster bootstrap samples; 95% CI; Holm-adjusted P values",
+      "source_data": "source_data/fig5_utility_gain_forest.csv"
+    },
+    "fig6": {
+      "core_conclusion": "Joint budget coupling enforces set inclusion and removes all observed adjacent-budget conflicts at a modest frozen point-estimate utility cost.",
+      "archetype": "schematic-led composite",
+      "panels": {
+        "a": "nested-set semantics",
+        "b": "conflicts before and after coupling"
+      },
+      "statistics": "conflict counts are deterministic frozen replay results; 2.91% is an aggregate point estimate",
+      "source_data": "source_data/fig6_nesting_conflicts.csv"
+    },
+    "fig7": {
+      "core_conclusion": "A real frozen replay demonstrates how dynamic value thresholds, nested actions, event-triggered release and unsettled reservations interact within a station-month capacity limit.",
+      "archetype": "asymmetric multi-track time-series figure",
+      "panels": {
+        "a": "risk value and threshold",
+        "b": "four nested budget actions",
+        "c": "F/P/L/O capacity state at 10 h"
+      },
+      "case": {
+        "station_code": "F5260",
+        "station_name": "泉州九仙山永安岩",
+        "station_month": "2024-03",
+        "events": 4,
+        "hits_at_10h": 3,
+        "misses_at_10h": 1,
+        "contains_false_alarm_capacity": true,
+        "contains_unsettled_capacity": true,
+        "contains_true_release": true,
+        "locked_true_policy": false,
+        "selected_parameter_sha256": "3518056265913b09246feeab3dbd7d344481aee2adcd0106aa5a5a142112929f",
+        "trajectory_sha256": "0e2846c079deb9bb67f74f24a29a7b221d02450b97b6b51985312b5a873c2818",
+        "event_table_sha256": "b9d8f6f6b4ccaa32694ff367e1de56436ad62832d22ed08699f8b9912f036a29",
+        "controller_contract_version": "uadhbac-causal-reserve-v1"
+      },
+      "source_data": [
+        "source_data/fig7_F5260_2024-03_trace.csv.gz",
+        "source_data/fig7_F5260_2024-03_events.csv",
+        "source_data/fig7_F5260_2024-03_month_state.csv"
+      ]
+    },
+    "fig8": {
+      "core_conclusion": "Both spatial contracts show a PR-AUC loss at unseen stations, but the two estimates remain separate experiments and are not pooled.",
+      "archetype": "supplementary forest plot",
+      "panels": {
+        "a": "two distinct spatial generalization gaps"
+      },
+      "statistics": "5000 station-cluster bootstrap samples; 95% CI; n=27 stations",
+      "source_data": "source_data/fig8_unseen_station_generalization.csv"
+    }
+  },
+  "source_data_sha256": {
+    "source_data/fig4_budget_performance.csv": "e694c611b32f37a446626404f768a2b9783b3dd3077406fdbafaa1dcd0548b8f",
+    "source_data/fig5_utility_gain_forest.csv": "771c01196d74585b1f66c8da11268fe4363be23c7736be87eea582d46dfcfb94",
+    "source_data/fig6_nesting_conflicts.csv": "49ba851a1407113fd2705a447710dde90e392b72c45257c4c6016000ce8e25a8",
+    "source_data/fig7_F5260_2024-03_events.csv": "480ce79acf8689730739399e14b8dc9ecc2e1f7fd5213201747179e718fe8824",
+    "source_data/fig7_F5260_2024-03_month_state.csv": "6abf953265a6c03402df6b8c8dff8953465a78387bc1ac2d3fc3f86c6a5cb465",
+    "source_data/fig7_F5260_2024-03_summary.json": "686a1e72db890024cb835fd2f84d1975ceda37b85238fd9377cd1551d4a107ec",
+    "source_data/fig7_F5260_2024-03_trace.csv.gz": "6e52e5036d8c2f8d82bf4384d29aa717707a9d2d5bcca63b037ea1d9234a5259",
+    "source_data/fig8_unseen_station_generalization.csv": "0aaebdf1929857449ac7a34bf87d2d4a8bb0bd0205b741620a7fbcc618d1cf70"
+  },
+  "primary_input_sha256": {
+    "frozen_main_results.csv": "ab6862e7a118af71de82bd9130daa79a26d66d41cc5811d7026a2c1fa691c40e",
+    "paired_station_cluster_bootstrap.csv": "313568005a3205217cc3d7e0c0597929702a779fdb5a740aa7437c14998fdf69",
+    "standard_baseline_station_cluster_bootstrap.csv": "9c61d8dccfd47ad694cf0f23bfe2f8c0890be615395980394ebd8d2258c8f517",
+    "nesting_utility_cost.csv": "e6bb62657acfff5fa881cb6fc60342183e8d83d3b4ba8341bba18e6ba4bd7294",
+    "paired_generalization_gap_bootstrap.csv": "2be5ca25e43cd3241b5475172f12d147ca969f06eb6e941692fd227b2ef9bf63"
+  }
+}

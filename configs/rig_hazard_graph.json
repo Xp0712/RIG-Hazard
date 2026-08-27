@@ -1,0 +1,59 @@
+{
+  "preprocessed_root": "results/preprocessed_data_10min",
+  "baseline_root": "results/local_weather_hazard_baselines",
+  "output_root": "results/hierarchical_sparse_lag_graph",
+  "scheme": "development",
+  "train_split": "train",
+  "station_limit": null,
+  "sampling": {
+    "seed": 20260806,
+    "hard_negative_target": 60000,
+    "easy_negative_target": 60000
+  },
+  "source_signal": {
+    "baseline_quantile": 0.9,
+    "scale_quantile": 0.99,
+    "clip": 5.0,
+    "rolling_window_minutes": 30
+  },
+  "graph": {
+    "candidate_neighbors": 6,
+    "max_distance_km": 200.0,
+    "lags_minutes": [30, 60, 120, 180],
+    "l1_grid": [0.0, 1e-7, 3e-7, 1e-6, 3e-6, 1e-5, 3e-5],
+    "nonzero_tolerance": 1e-6,
+    "selection_lead_utility_tie_hours": 0.05,
+    "maximum_pr_auc_relative_degradation": 0.2
+  },
+  "hierarchy": {
+    "local_slope_l2": 0.0,
+    "city_effect_l2": 1e-4,
+    "station_effect_l2": 5e-4,
+    "graph_l2": 1e-5,
+    "maximum_local_slope": 3.0,
+    "maximum_effect": 3.0,
+    "maximum_graph_coefficient": 3.0
+  },
+  "optimization": {
+    "max_iter": 250,
+    "tolerance": 1e-12
+  },
+  "validation": {
+    "selection_start": "2023-01-01",
+    "selection_end": "2023-07-01",
+    "calibration_start": "2023-07-01",
+    "calibration_end": "2024-01-01"
+  },
+  "warning": {
+    "horizon_hours": 6,
+    "false_alarm_hours_per_station_month": 10.0,
+    "minimum_consecutive_alarm_bins": 2,
+    "alarm_merge_gap_minutes": 20,
+    "maximum_silence_before_event_minutes": 30
+  },
+  "bootstrap": {
+    "samples": 2000,
+    "seed": 20260806
+  },
+  "prediction_compression_level": 1
+}
