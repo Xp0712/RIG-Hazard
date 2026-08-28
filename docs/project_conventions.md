@@ -60,7 +60,11 @@ propagate legacy names.
 - Keep the root README concise: project scope, frozen evaluation contract, key
   findings, repository layout, asset retrieval, canonical results, installation,
   and reproduction commands. Detailed numerical interpretation belongs in
-  `docs/results_analysis.md`.
+  `docs/results_analysis.md`; exhaustive evidence-tier and artifact routing
+  belongs in `docs/results_catalog.md`.
+- Every new top-level result directory or experiment family must be added to
+  `docs/results_catalog.md` with its evidence tier, summary artifacts, result
+  role, and precedence relative to the frozen primary contract.
 - Separate scientific results from transient operations. Do not record local test
   counts, machine-specific paths, file-transfer summaries, temporary run status,
   or workstation inventories in maintained documentation. Put reproducibility
@@ -85,6 +89,7 @@ propagate legacy names.
 | Executable scripts | `scripts/` |
 | Experiment artifacts and logs | `results/` |
 | Central visualization output | `visualization/` |
+| Complete result-family inventory | `docs/results_catalog.md` |
 | Default preprocessing configuration | `configs/rig_hazard_preprocessing.json` |
 | Runtime dependencies | `requirements/runtime.txt` |
 | Deep-learning dependencies | `requirements/deep_learning.txt` |

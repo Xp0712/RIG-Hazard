@@ -10,8 +10,10 @@ selection use only pooled out-of-fold (OOF) predictions from 2022. Data from
 2023 and 2024 are reserved for frozen evaluation.
 
 See [docs/results_analysis.md](docs/results_analysis.md) for the complete result
-interpretation and [docs/project_conventions.md](docs/project_conventions.md)
-for repository and documentation standards.
+interpretation, [docs/results_catalog.md](docs/results_catalog.md) for the
+evidence-tiered inventory of every result family, and
+[docs/project_conventions.md](docs/project_conventions.md) for repository and
+documentation standards.
 
 ## Key findings
 
@@ -91,6 +93,36 @@ and exact paired station bootstrap results are stored under
 interpretation, including rules, classifiers, hazard models, and
 recurrence-history ablations, is provided in
 [docs/results_analysis.md](docs/results_analysis.md#3-predictive-information).
+
+## Complete result coverage
+
+The table below makes every project-level result family discoverable from the
+root README. Detailed values, uncertainty intervals, limitations, and artifact
+precedence are reported in [docs/results_analysis.md](docs/results_analysis.md);
+the exhaustive artifact routing is in
+[docs/results_catalog.md](docs/results_catalog.md).
+
+| Result family | Project-level result | Evidence status |
+| --- | --- | --- |
+| Data preparation and event construction | 43,077,910 minute records produce 4,472,064 ten-minute timestamps, 476 valid events, 447 leakage-free issue times, and 4,161,734 risk-set timestamps | Supporting data contract |
+| Event-definition sensitivity | Valid events range from 326 to 476 across 36 merge, cooldown, temperature, and thickness definitions; 27 stations remain recurrent | Supporting robustness analysis |
+| Classical probability baselines | Physical rules identify plausible conditions but are not competitive calibrated probability models; the direct classifier and local hazard model provide the strongest early statistical baselines | Historical protocol, retained for context |
+| Recurrence-history models | `local_weather_hazard` has the highest 2022 OOF PR-AUC (0.2609); recurrence additions do not yield a stable cross-year improvement | Confirmatory model-selection evidence |
+| Fair temporal encoders | GRU leads 2023 PR-AUC and TimesNet leads 2024 Log Loss, but neither dominates across years and metrics | Confirmatory fair-baseline evidence |
+| Multiscale weather and recurrence gates | The experimental fast-only encoder leads its 2022 candidate screen; dual-scale weather and recurrence gates do not provide a stable locked-year gain | Supporting model-screen evidence |
+| Conditional recurrence information | Conditional gates and probability blends generate hypotheses, but none of the top screened combinations has simultaneous station-bootstrap support for PR-AUC, Log Loss, and Brier improvement | Exploratory only |
+| First-versus-recurrent structure | The joint weather-by-recurrence interaction has Wald $\chi^2=175.31$ with 5 degrees of freedom ($P=5.37\times10^{-36}$), establishing association heterogeneity but not stable predictive gain | Supporting inferential analysis |
+| Strict event alignment | Complete-window coverage is 84/116 events in 2023 and 116/181 in 2024; operational coverage is 113/116 and 170/181 | Frozen evaluation contract |
+| Historical alert policies | Only `budget_safe` and `original_simple` are hard-feasible across every frozen year-budget point; higher-utility unconstrained policies overspend locally | Frozen baseline evidence |
+| Dynamic hard-budget controller | `uadhbac` has zero online hard-budget violations and zero nesting violations at all eight frozen year-budget points | Primary confirmatory result |
+| Prespecified utility tests | At 5-hour and 10-hour budgets, `uadhbac` improves operational lead-time utility over `budget_safe` in all four 2023/2024 comparisons after Holm correction | Primary confirmatory result |
+| Controller ablations and sensitivities | Removing coupling creates 2,952 nesting conflicts; removing reservations breaks feasibility; removing dynamic price lowers mean operational utility from 2.600 to 1.812; dense-budget, utility, and horizon checks preserve feasibility and nesting | Frozen mechanism and robustness evidence |
+| Standard online algorithms | DMD uses 90.4% to 98.8% of reserved capacity but is not nested; switch-over is feasible and nested but uses only 27.0% to 34.3% | Frozen secondary baseline evidence |
+| Cost of nesting | Frozen aggregate utility cost is 0.623 hours, or 2.91% of uncoupled utility; only one operational comparison remains significant after Holm correction | Frozen secondary analysis |
+| Neighbor graph | Stability selection retains 168 edge-lag terms representing 62 directed edges, but the graph gives no stable probability or alerting gain | Supporting negative result |
+| Spatial generalization | Unseen-station PR-AUC gaps are -0.0626 and -0.0521 under the two reported temporal-spatial contracts | Supporting deployment limitation |
+| Public recurrence datasets | Ecommerce and US-accident runs complete with zero online violations; these are workflow diagnostics rather than external icing validation | Diagnostic only |
+| Precursor and superseded experiments | Earlier warning, nested-alert, deep-extension, graph-budget, and governance runs remain archived for provenance; their metrics do not override the strict frozen contract | Historical provenance |
 
 ## Repository layout
 

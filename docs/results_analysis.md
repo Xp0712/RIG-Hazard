@@ -116,6 +116,47 @@ These results do not support treating encoder complexity itself as a stable
 advantage. `local_weather_hazard` remains the primary model; GRU and TimesNet
 are informative secondary comparisons.
 
+### 3.4 Multiscale weather and recurrence-gate candidates
+
+A separate supporting experiment screened fast-history, slow-history,
+dual-scale weather, full-GRU, and recurrence-gated encoders. It used the same
+2022-only selection principle but belongs to the experimental icing-model
+contract rather than the frozen primary-model contract.
+
+| Candidate | 2022 OOF PR-AUC | 2022 OOF Log Loss | Log-Loss guard |
+| --- | ---: | ---: | --- |
+| Fast-history encoder | **0.2196** | **0.01072** | Pass |
+| Slow-history encoder | 0.2170 | 0.01128 | Pass |
+| Full GRU encoder | 0.1988 | 0.01138 | Pass |
+| Dual-scale weather encoder | 0.1912 | 0.01104 | Pass |
+| Dual-scale recurrence gate | 0.2015 | 0.01123 | Pass |
+| Dual-scale full recurrence | 0.1656 | 0.01172 | Fail |
+
+The 5,000-sample locked-year station bootstrap shows that the dual-scale weather
+encoder is worse than the fast-history encoder in 2024 PR-AUC by 0.0273 (95% CI
+[-0.0557, -0.0070]); the 2023 interval includes zero. Adding full recurrence
+raises Log Loss relative to dual-scale weather in both frozen years. The gated
+version has no significant PR-AUC improvement and raises 2024 Log Loss by
+0.000670 (95% CI [0.000082, 0.001559]). These experiments reinforce model
+simplification but do not replace the fair comparison in Section 3.3.
+
+### 3.5 Conditional information and failure diagnostics
+
+Conditional recurrence screens use 2022 purged OOF predictions for hypothesis
+generation. In the all-row screen, `rec_load` is significantly worse than
+`local_weather_hazard` in station-bootstrap PR-AUC, with a 95% interval for the
+difference of [-0.0843, -0.0297]. The interval for `rec_previous` crosses zero.
+Among the 20 highest-ranked condition-model or probability-blend combinations,
+none has simultaneous 95% station-bootstrap support for higher PR-AUC, lower
+Log Loss, and lower Brier score.
+
+Conditional permutation diagnostics confirm that the recurrence models use
+their assigned feature groups. Model use is not the same as incremental value:
+the additional probability shifts often add squared-error cost without enough
+residual correction. Conditions defined using future outcomes, including hard
+negatives, are diagnostic only and cannot be prospective gates. No conditional
+screen was promoted into the frozen 2023/2024 model contract.
+
 ## 4. First-event and recurrent-event risk structure
 
 A statistical interaction model shows different risk structures for first and
@@ -330,6 +371,24 @@ operational cost remains significant after Holm correction; no nonzero
 complete-window cost remains significant. The 2.91% value is therefore a frozen
 sample estimate, not a universal population cost.
 
+### 5.8 Precursor alert experiments and result precedence
+
+Earlier warning experiments used average false-alarm hours, non-strict event
+matching, or independently selected budget thresholds. They remain useful for
+development history but do not satisfy the final combination of station-month
+hard feasibility, unsettled-capacity reservation, strict event alignment, and
+cross-budget nesting.
+
+The earlier nested-alert experiment illustrates the distinction. Its nominal
+2-hour, 5-hour, and 10-hour policies exceed their mean false-alarm budgets in
+both 2023 and 2024; only the 20-hour policies meet the mean budget. Its high hit
+rates therefore cannot be compared as feasible results against the final hard
+budget controller. The `recurrence_modeling/utility_warning` results meet their
+average budgets but do not prove per-station-month reserved-capacity
+feasibility. The later `alert_governance` strict-grid runs correct matching and
+policy comparisons, while `dynamic_hard_budget` is the authoritative frozen
+contract that supersedes all of these precursor controller results.
+
 ## 6. Neighbor signals and spatial generalization
 
 Stability selection retains 168 of 560 candidate edge-lag terms, representing
@@ -447,3 +506,8 @@ does not create alias copies of canonical tables.
 | `experiments/utility_function_sensitivity.csv` | Lead-time utility sensitivity |
 | `experiments/prediction_window_sensitivity.csv` | Forecast-horizon sensitivity |
 | `public_recurrence_benchmarks/*/frozen_test_metrics.csv` | All frozen public-dataset diagnostic runs |
+
+Supporting, exploratory, superseded, and legacy result families are routed in
+[results_catalog.md](results_catalog.md). That catalog covers every top-level
+directory under `results/` and prevents older contracts from being interpreted
+as duplicate versions of the frozen primary result.
