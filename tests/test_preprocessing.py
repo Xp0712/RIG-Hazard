@@ -45,7 +45,7 @@ class EventExtractionTests(unittest.TestCase):
                 "fog_flag": [1, 1, 0],
             }
         )
-        events = extract_events(positives, "F0001", "测试站", "测试", test_config())
+        events = extract_events(positives, "F0001", "Test Station", "Test City", test_config())
         self.assertEqual(len(events), 2)
         self.assertEqual(events[0]["ice_positive_minutes"], 2)
         self.assertEqual(events[0]["valid_target_event"], 1)
@@ -62,12 +62,12 @@ class EventExtractionTests(unittest.TestCase):
                 "fog_flag": [1, 1],
             }
         )
-        events = extract_events(positives, "F0001", "测试站", "测试", test_config())
+        events = extract_events(positives, "F0001", "Test Station", "Test City", test_config())
         self.assertEqual(events[1]["reference_issue_time"], pd.Timestamp("2022-01-01 01:00:00"))
         self.assertEqual(events[1]["valid_target_event"], 1)
 
         positives.loc[1, "timestamp"] = pd.Timestamp("2022-01-01 00:59:00")
-        events = extract_events(positives, "F0001", "测试站", "测试", test_config())
+        events = extract_events(positives, "F0001", "Test Station", "Test City", test_config())
         self.assertEqual(events[1]["reference_issue_time"], pd.Timestamp("2022-01-01 00:50:00"))
         self.assertEqual(events[1]["valid_target_event"], 0)
         self.assertEqual(events[1]["target_exclusion_reason"], "prediction_time_within_cooldown")

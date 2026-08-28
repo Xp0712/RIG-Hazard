@@ -14,31 +14,31 @@ from typing import Any
 import pandas as pd
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-DATA_ROOT = PROJECT_ROOT / "(林立铮2025.6.21)凝结类天气数据"
-OUTPUT_ROOT = PROJECT_ROOT / "analysis_outputs"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_ROOT = PROJECT_ROOT / "data" / "meteorology_raw"
+OUTPUT_ROOT = PROJECT_ROOT / "results" / "legacy_exploration" / "analysis_outputs"
 
-TIME_COL = "观测时间"
-STATION_COL = "站点名称"
-STATION_CODE_COL = "站点编号"
-STATION_ID_COL = "站点ID"
-VOLTAGE_COL = "设备电压"
-ICE_THICKNESS_COL = "覆冰厚度"
-ICE_FREQ_COL = "结冰传感器频率"
-ICE_TYPE_COL = "覆冰类型"
-TEMP_COL = "气温"
-RH_COL = "相对湿度"
-PRESSURE_COL = "气压"
-RAIN_COL = "雨"
-HOURLY_RAIN_COL = "小时降雨"
-WIND10_COL = "十分钟平均风速"
-VIS_COL = "能见度"
-VIS10_COL = "十分钟能见度"
-PRECIP_PHENOM_COL = "降水天气现象"
-VIS_OBSTACLE_COL = "视程障碍"
+TIME_COL = "\u89c2\u6d4b\u65f6\u95f4"
+STATION_COL = "\u7ad9\u70b9\u540d\u79f0"
+STATION_CODE_COL = "\u7ad9\u70b9\u7f16\u53f7"
+STATION_ID_COL = "\u7ad9\u70b9ID"
+VOLTAGE_COL = "\u8bbe\u5907\u7535\u538b"
+ICE_THICKNESS_COL = "\u8986\u51b0\u539a\u5ea6"
+ICE_FREQ_COL = "\u7ed3\u51b0\u4f20\u611f\u5668\u9891\u7387"
+ICE_TYPE_COL = "\u8986\u51b0\u7c7b\u578b"
+TEMP_COL = "\u6c14\u6e29"
+RH_COL = "\u76f8\u5bf9\u6e7f\u5ea6"
+PRESSURE_COL = "\u6c14\u538b"
+RAIN_COL = "\u96e8"
+HOURLY_RAIN_COL = "\u5c0f\u65f6\u964d\u96e8"
+WIND10_COL = "\u5341\u5206\u949f\u5e73\u5747\u98ce\u901f"
+VIS_COL = "\u80fd\u89c1\u5ea6"
+VIS10_COL = "\u5341\u5206\u949f\u80fd\u89c1\u5ea6"
+PRECIP_PHENOM_COL = "\u964d\u6c34\u5929\u6c14\u73b0\u8c61"
+VIS_OBSTACLE_COL = "\u89c6\u7a0b\u969c\u788d"
 
 ALIAS_COLS = {
-    "一分钟能见度": VIS_COL,
+    "\u4e00\u5206\u949f\u80fd\u89c1\u5ea6": VIS_COL,
 }
 
 SELECT_COLS = [
@@ -79,7 +79,15 @@ NUMERIC_COLS = [
 ]
 
 MISSING_MARKERS = {"", "--", "nan", "NaN", "NAN", "null", "NULL", "None", "none"}
-CITY_PREFIXES = ["武夷山", "龙岩", "泉州", "宁德", "南平", "三明"]
+CITY_PREFIXES = [
+    "\u6b66\u5937\u5c71",
+    "\u9f99\u5ca9",
+    "\u6cc9\u5dde",
+    "\u5b81\u5fb7",
+    "\u5357\u5e73",
+    "\u4e09\u660e",
+]
+RAW_FOG_TOKEN = "\u96fe"
 MERGE_GAP_MINUTES = 10
 CHUNKSIZE = 200_000
 
@@ -170,16 +178,16 @@ class EventState:
             return None
         elapsed_minutes = int((self.end - self.start).total_seconds() // 60) + 1
         event = {
-            "站点": self.station,
-            "城市": self.city,
-            "年份": self.year,
-            "开始时间": ts_to_text(self.start),
-            "结束时间": ts_to_text(self.end),
-            "持续分钟_含合并间断": elapsed_minutes,
-            "覆冰观测分钟": self.obs_minutes,
-            "峰值覆冰厚度": round(self.max_thickness, 3),
-            "峰值时间": ts_to_text(self.peak_time),
-            "来源文件": self.source_file,
+            "station": self.station,
+            "city": self.city,
+            "year": self.year,
+            "start_time": ts_to_text(self.start),
+            "end_time": ts_to_text(self.end),
+            "elapsed_minutes_including_merged_gaps": elapsed_minutes,
+            "icing_observation_minutes": self.obs_minutes,
+            "peak_ice_thickness": round(self.max_thickness, 3),
+            "peak_time": ts_to_text(self.peak_time),
+            "source_file": self.source_file,
         }
         self.active = False
         return event
@@ -209,11 +217,11 @@ def infer_city(station: str) -> str:
     for prefix in CITY_PREFIXES:
         if station.startswith(prefix):
             return prefix
-    return "未识别"
+    return "Unknown"
 
 
 def infer_year(path: Path) -> str:
-    match = re.search(r"(20\d{2})年", str(path.parent))
+    match = re.search(r"(20\d{2})", str(path.parent))
     return match.group(1) if match else ""
 
 
@@ -243,7 +251,7 @@ def parse_times(series: pd.Series) -> pd.Series:
 
 
 def pct_col_name(condition_name: str) -> str:
-    return f"{condition_name[:-2]}占比%" if condition_name.endswith("分钟") else f"{condition_name}占比%"
+    return f"{condition_name}_percentage"
 
 
 def update_time_quality(agg: Aggregate, times: pd.Series) -> None:
@@ -292,13 +300,13 @@ def add_anomalies(agg: Aggregate, numeric: dict[str, pd.Series]) -> None:
     ice = numeric[ICE_THICKNESS_COL]
     voltage = numeric[VOLTAGE_COL]
 
-    agg.anomaly_counts["气温<-50或>60"] += int(((temp < -50) | (temp > 60)).sum())
-    agg.anomaly_counts["相对湿度<0或>100"] += int(((rh < 0) | (rh > 100)).sum())
-    agg.anomaly_counts["气压<300或>1100"] += int(((pressure < 300) | (pressure > 1100)).sum())
-    agg.anomaly_counts["十分钟风速<0或>75"] += int(((wind10 < 0) | (wind10 > 75)).sum())
-    agg.anomaly_counts["能见度<0或>50000"] += int(((vis < 0) | (vis > 50000)).sum())
-    agg.anomaly_counts["覆冰厚度<0"] += int((ice < 0).sum())
-    agg.anomaly_counts["设备电压<11V"] += int((voltage < 11).sum())
+    agg.anomaly_counts["air_temperature_outside_-50_60"] += int(((temp < -50) | (temp > 60)).sum())
+    agg.anomaly_counts["relative_humidity_outside_0_100"] += int(((rh < 0) | (rh > 100)).sum())
+    agg.anomaly_counts["station_pressure_outside_300_1100"] += int(((pressure < 300) | (pressure > 1100)).sum())
+    agg.anomaly_counts["ten_minute_wind_speed_outside_0_75"] += int(((wind10 < 0) | (wind10 > 75)).sum())
+    agg.anomaly_counts["visibility_outside_0_50000"] += int(((vis < 0) | (vis > 50000)).sum())
+    agg.anomaly_counts["negative_ice_thickness"] += int((ice < 0).sum())
+    agg.anomaly_counts["device_voltage_below_11v"] += int((voltage < 11).sum())
 
 
 def add_conditions(agg: Aggregate, chunk: pd.DataFrame, numeric: dict[str, pd.Series]) -> dict[str, pd.Series]:
@@ -319,26 +327,26 @@ def add_conditions(agg: Aggregate, chunk: pd.DataFrame, numeric: dict[str, pd.Se
     obstacle_present_text = ~obstacle_text.isin(MISSING_MARKERS)
 
     ice_positive = ice > 0
-    fog_text = obstacle_text.str.contains("雾", regex=False, na=False)
+    fog_text = obstacle_text.str.contains(RAW_FOG_TOKEN, regex=False, na=False)
     lowvis = vis < 1000
     lowvis10 = vis10 < 1000
     fog_or_lowvis = fog_text | lowvis | lowvis10
     precip_record = precip_present_text | (rain > 0) | (hourly_rain > 0)
 
     conditions = {
-        "覆冰厚度>0分钟": ice_positive,
-        "覆冰类型有记录分钟": ice_type_present,
-        "覆冰类型有记录但厚度为0分钟": ice_type_present & ~ice_positive,
-        "气温<=0分钟": temp <= 0,
-        "气温<=2且湿度>=95分钟": (temp <= 2) & (rh >= 95),
-        "气温<=0且湿度>=90分钟": (temp <= 0) & (rh >= 90),
-        "湿度>=95分钟": rh >= 95,
-        "雾或能见度<1000m分钟": fog_or_lowvis,
-        "能见度<1000m分钟": lowvis,
-        "能见度<500m分钟": vis < 500,
-        "降水记录分钟": precip_record,
-        "十分钟风速>=5m/s分钟": wind10 >= 5,
-        "十分钟风速>=10m/s分钟": wind10 >= 10,
+        "positive_ice_thickness_minutes": ice_positive,
+        "recorded_ice_type_minutes": ice_type_present,
+        "recorded_ice_type_zero_thickness_minutes": ice_type_present & ~ice_positive,
+        "air_temperature_le_0_minutes": temp <= 0,
+        "air_temperature_le_2_rh_ge_95_minutes": (temp <= 2) & (rh >= 95),
+        "air_temperature_le_0_rh_ge_90_minutes": (temp <= 0) & (rh >= 90),
+        "relative_humidity_ge_95_minutes": rh >= 95,
+        "fog_or_visibility_lt_1000m_minutes": fog_or_lowvis,
+        "visibility_lt_1000m_minutes": lowvis,
+        "visibility_lt_500m_minutes": vis < 500,
+        "precipitation_record_minutes": precip_record,
+        "ten_minute_wind_speed_ge_5mps_minutes": wind10 >= 5,
+        "ten_minute_wind_speed_ge_10mps_minutes": wind10 >= 10,
     }
     for key, mask in conditions.items():
         agg.condition_counts[key] += int(mask.sum())
@@ -414,77 +422,77 @@ def aggregate_to_row(agg: Aggregate, label: str = "") -> dict[str, Any]:
         range_expected = int((agg.last_time - agg.first_time).total_seconds() // 60) + 1
     unique_estimate = max(0, agg.rows - agg.duplicate_adjacent_minutes)
     row = {
-        "分组": label,
-        "城市": agg.city,
-        "站点": agg.station,
-        "站点编号": agg.station_code,
-        "站点ID": agg.station_id,
-        "年份": agg.folder_year,
-        "来源文件": agg.source_file,
-        "记录数": agg.rows,
-        "起始时间": ts_to_text(agg.first_time),
-        "结束时间": ts_to_text(agg.last_time),
-        "按首末时间应有分钟": range_expected if range_expected is not None else "",
-        "按首末时间完整率%": round(pct(unique_estimate, range_expected), 3) if range_expected else "",
-        "按自然年应有分钟": full_expected if full_expected else "",
-        "按自然年完整率%": round(pct(unique_estimate, full_expected), 3) if full_expected else "",
-        "相邻重复时间戳": agg.duplicate_adjacent_minutes,
-        "时间倒序记录": agg.out_of_order_rows,
-        "序列缺口分钟": agg.missing_sequence_minutes,
-        "时间解析失败": agg.time_parse_errors,
+        "group": label,
+        "city": agg.city,
+        "station": agg.station,
+        "station_code": agg.station_code,
+        "station_id": agg.station_id,
+        "year": agg.folder_year,
+        "source_file": agg.source_file,
+        "records": agg.rows,
+        "start_time": ts_to_text(agg.first_time),
+        "end_time": ts_to_text(agg.last_time),
+        "expected_minutes_in_observed_range": range_expected if range_expected is not None else "",
+        "observed_range_completeness_percentage": round(pct(unique_estimate, range_expected), 3) if range_expected else "",
+        "expected_minutes_in_calendar_year": full_expected if full_expected else "",
+        "calendar_year_completeness_percentage": round(pct(unique_estimate, full_expected), 3) if full_expected else "",
+        "adjacent_duplicate_timestamps": agg.duplicate_adjacent_minutes,
+        "out_of_order_records": agg.out_of_order_rows,
+        "sequence_gap_minutes": agg.missing_sequence_minutes,
+        "timestamp_parse_failures": agg.time_parse_errors,
     }
     metric_map = {
-        TEMP_COL: "气温",
-        RH_COL: "相对湿度",
-        PRESSURE_COL: "气压",
-        WIND10_COL: "十分钟风速",
-        VIS_COL: "能见度",
-        ICE_THICKNESS_COL: "覆冰厚度",
-        VOLTAGE_COL: "设备电压",
+        TEMP_COL: "air_temperature",
+        RH_COL: "relative_humidity",
+        PRESSURE_COL: "station_pressure",
+        WIND10_COL: "ten_minute_wind_speed",
+        VIS_COL: "visibility",
+        ICE_THICKNESS_COL: "ice_thickness",
+        VOLTAGE_COL: "device_voltage",
     }
-    for col, label_cn in metric_map.items():
+    for col, metric_name in metric_map.items():
         stats = agg.stats[col]
-        row[f"{label_cn}均值"] = round(stats.mean, 3) if stats.mean is not None else ""
-        row[f"{label_cn}最小值"] = round(stats.min_value, 3) if stats.min_value is not None else ""
-        row[f"{label_cn}最大值"] = round(stats.max_value, 3) if stats.max_value is not None else ""
+        row[f"{metric_name}_mean"] = round(stats.mean, 3) if stats.mean is not None else ""
+        row[f"{metric_name}_minimum"] = round(stats.min_value, 3) if stats.min_value is not None else ""
+        row[f"{metric_name}_maximum"] = round(stats.max_value, 3) if stats.max_value is not None else ""
     for key in [
-        "覆冰厚度>0分钟",
-        "覆冰类型有记录分钟",
-        "覆冰类型有记录但厚度为0分钟",
-        "气温<=0分钟",
-        "气温<=2且湿度>=95分钟",
-        "气温<=0且湿度>=90分钟",
-        "湿度>=95分钟",
-        "雾或能见度<1000m分钟",
-        "能见度<1000m分钟",
-        "能见度<500m分钟",
-        "降水记录分钟",
-        "十分钟风速>=5m/s分钟",
-        "十分钟风速>=10m/s分钟",
+        "positive_ice_thickness_minutes",
+        "recorded_ice_type_minutes",
+        "recorded_ice_type_zero_thickness_minutes",
+        "air_temperature_le_0_minutes",
+        "air_temperature_le_2_rh_ge_95_minutes",
+        "air_temperature_le_0_rh_ge_90_minutes",
+        "relative_humidity_ge_95_minutes",
+        "fog_or_visibility_lt_1000m_minutes",
+        "visibility_lt_1000m_minutes",
+        "visibility_lt_500m_minutes",
+        "precipitation_record_minutes",
+        "ten_minute_wind_speed_ge_5mps_minutes",
+        "ten_minute_wind_speed_ge_10mps_minutes",
     ]:
         value = agg.condition_counts[key]
         row[key] = value
         row[pct_col_name(key)] = round(pct(value, agg.rows), 3) if agg.rows else ""
-    row["异常记录合计"] = sum(agg.anomaly_counts.values())
+    row["total_anomaly_records"] = sum(agg.anomaly_counts.values())
     return row
 
 
 def month_row(month: str, agg: Aggregate) -> dict[str, Any]:
     row = aggregate_to_row(agg)
-    row["月份"] = month
-    row.pop("分组", None)
-    row.pop("年份", None)
-    row.pop("来源文件", None)
-    row.pop("按自然年应有分钟", None)
-    row.pop("按自然年完整率%", None)
-    row.pop("按首末时间应有分钟", None)
-    row.pop("按首末时间完整率%", None)
-    row.pop("相邻重复时间戳", None)
-    row.pop("时间倒序记录", None)
-    row.pop("序列缺口分钟", None)
-    row.pop("时间解析失败", None)
-    row.pop("起始时间", None)
-    row.pop("结束时间", None)
+    row["month"] = month
+    row.pop("group", None)
+    row.pop("year", None)
+    row.pop("source_file", None)
+    row.pop("expected_minutes_in_calendar_year", None)
+    row.pop("calendar_year_completeness_percentage", None)
+    row.pop("expected_minutes_in_observed_range", None)
+    row.pop("observed_range_completeness_percentage", None)
+    row.pop("adjacent_duplicate_timestamps", None)
+    row.pop("out_of_order_records", None)
+    row.pop("sequence_gap_minutes", None)
+    row.pop("timestamp_parse_failures", None)
+    row.pop("start_time", None)
+    row.pop("end_time", None)
     return row
 
 
@@ -494,7 +502,7 @@ def safe_div(value: float, denominator: float) -> float:
 
 def markdown_table(rows: list[dict[str, Any]], columns: list[str], max_rows: int = 20) -> str:
     if not rows:
-        return "\n无。\n"
+        return "\nNone.\n"
     rows = rows[:max_rows]
     header = "| " + " | ".join(columns) + " |"
     sep = "| " + " | ".join(["---"] * len(columns)) + " |"
@@ -517,14 +525,14 @@ def format_number(value: float | int | None, digits: int = 2) -> str:
 def top_counter(counter: Counter, n: int = 15) -> list[dict[str, Any]]:
     total = sum(counter.values())
     return [
-        {"类别": key, "记录数": value, "占比%": round(pct(value, total), 3)}
+        {"category": key, "records": value, "percentage": round(pct(value, total), 3)}
         for key, value in counter.most_common(n)
     ]
 
 
 def svg_bar_chart(items: list[tuple[str, float]], title: str, width: int = 920, height: int = 380, value_suffix: str = "") -> str:
     if not items:
-        return "<p>暂无数据</p>"
+        return "<p>No data.</p>"
     max_value = max(v for _, v in items) or 1
     pad_left, pad_right, pad_top, pad_bottom = 150, 30, 42, 42
     plot_w = width - pad_left - pad_right
@@ -547,7 +555,7 @@ def svg_bar_chart(items: list[tuple[str, float]], title: str, width: int = 920, 
 
 def svg_line_chart(items: list[tuple[str, float]], title: str, width: int = 920, height: int = 300, value_suffix: str = "%") -> str:
     if not items:
-        return "<p>暂无数据</p>"
+        return "<p>No data.</p>"
     pad_left, pad_right, pad_top, pad_bottom = 56, 24, 42, 56
     plot_w = width - pad_left - pad_right
     plot_h = height - pad_top - pad_bottom
@@ -639,23 +647,23 @@ def build_reports(
 
     station_year_rows_sorted = sorted(
         station_year_rows,
-        key=lambda r: (r.get("城市", ""), r.get("站点", ""), str(r.get("年份", ""))),
+        key=lambda r: (r.get("city", ""), r.get("station", ""), str(r.get("year", ""))),
     )
     low_coverage = sorted(
         station_year_rows,
-        key=lambda r: float(r.get("按自然年完整率%", 0) if r.get("按自然年完整率%", "") != "" else 0),
+        key=lambda r: float(r.get("calendar_year_completeness_percentage", 0) if r.get("calendar_year_completeness_percentage", "") != "" else 0),
     )[:12]
     top_ice_stations = sorted(
         station_year_rows,
-        key=lambda r: float(r.get("覆冰厚度>0分钟", 0)),
+        key=lambda r: float(r.get("positive_ice_thickness_minutes", 0)),
         reverse=True,
     )[:15]
     top_fog_stations = sorted(
         station_year_rows,
-        key=lambda r: float(r.get("雾或能见度<1000m分钟占比%", 0) if r.get("雾或能见度<1000m分钟占比%", "") != "" else 0),
+        key=lambda r: float(r.get("fog_or_visibility_lt_1000m_minutes_percentage", 0) if r.get("fog_or_visibility_lt_1000m_minutes_percentage", "") != "" else 0),
         reverse=True,
     )[:15]
-    top_events = sorted(events, key=lambda e: (e["峰值覆冰厚度"], e["持续分钟_含合并间断"]), reverse=True)[:20]
+    top_events = sorted(events, key=lambda e: (e["peak_ice_thickness"], e["elapsed_minutes_including_merged_gaps"]), reverse=True)[:20]
 
     write_csv(OUTPUT_ROOT / "station_year_summary.csv", station_year_rows_sorted)
     write_csv(OUTPUT_ROOT / "month_summary.csv", month_rows)
@@ -665,26 +673,26 @@ def build_reports(
     missing_rows = []
     for col in SELECT_COLS:
         missing = global_agg.missing_text[col]
-        missing_rows.append({"字段": col, "缺失或--记录数": missing, "缺失率%": round(pct(missing, global_agg.rows), 4)})
+        missing_rows.append({"field": col, "missing_or_marker_records": missing, "missing_percentage": round(pct(missing, global_agg.rows), 4)})
     write_csv(OUTPUT_ROOT / "missingness_summary.csv", missing_rows)
 
     anomaly_rows = [
-        {"异常类型": key, "记录数": value, "占比%": round(pct(value, global_agg.rows), 5)}
+        {"anomaly_type": key, "records": value, "percentage": round(pct(value, global_agg.rows), 5)}
         for key, value in global_agg.anomaly_counts.most_common()
     ]
     write_csv(OUTPUT_ROOT / "anomaly_summary.csv", anomaly_rows)
 
     phenomena_rows = []
     for row in top_counter(global_agg.precip_counter, 50):
-        row["字段"] = PRECIP_PHENOM_COL
+        row["field"] = PRECIP_PHENOM_COL
         phenomena_rows.append(row)
     for row in top_counter(global_agg.obstacle_counter, 50):
-        row["字段"] = VIS_OBSTACLE_COL
+        row["field"] = VIS_OBSTACLE_COL
         phenomena_rows.append(row)
     write_csv(OUTPUT_ROOT / "phenomena_summary.csv", phenomena_rows)
 
-    station_count = len({r["站点"] for r in station_year_rows if r.get("站点")})
-    year_count = sorted({str(r["年份"]) for r in station_year_rows if r.get("年份")})
+    station_count = len({r["station"] for r in station_year_rows if r.get("station")})
+    year_count = sorted({str(r["year"]) for r in station_year_rows if r.get("year")})
     total_size = file_size_gb(csv_paths)
     avg_temp = global_agg.stats[TEMP_COL].mean
     min_temp = global_agg.stats[TEMP_COL].min_value
@@ -692,133 +700,133 @@ def build_reports(
     avg_rh = global_agg.stats[RH_COL].mean
     avg_vis = global_agg.stats[VIS_COL].mean
     max_ice = global_agg.stats[ICE_THICKNESS_COL].max_value
-    ice_minutes = global_agg.condition_counts["覆冰厚度>0分钟"]
-    ice_type_minutes = global_agg.condition_counts["覆冰类型有记录分钟"]
-    fog_minutes = global_agg.condition_counts["雾或能见度<1000m分钟"]
-    cold_moist_minutes = global_agg.condition_counts["气温<=2且湿度>=95分钟"]
-    freezing_humid_minutes = global_agg.condition_counts["气温<=0且湿度>=90分钟"]
+    ice_minutes = global_agg.condition_counts["positive_ice_thickness_minutes"]
+    ice_type_minutes = global_agg.condition_counts["recorded_ice_type_minutes"]
+    fog_minutes = global_agg.condition_counts["fog_or_visibility_lt_1000m_minutes"]
+    cold_moist_minutes = global_agg.condition_counts["air_temperature_le_2_rh_ge_95_minutes"]
+    freezing_humid_minutes = global_agg.condition_counts["air_temperature_le_0_rh_ge_90_minutes"]
 
     month_ice_chart_items = [
-        (r["月份"], float(r.get("覆冰厚度>0分钟占比%", 0) or 0))
-        for r in sorted(month_rows, key=lambda x: x["月份"])
+        (r["month"], float(r.get("positive_ice_thickness_minutes_percentage", 0) or 0))
+        for r in sorted(month_rows, key=lambda x: x["month"])
     ]
     month_fog_chart_items = [
-        (r["月份"], float(r.get("雾或能见度<1000m分钟占比%", 0) or 0))
-        for r in sorted(month_rows, key=lambda x: x["月份"])
+        (r["month"], float(r.get("fog_or_visibility_lt_1000m_minutes_percentage", 0) or 0))
+        for r in sorted(month_rows, key=lambda x: x["month"])
     ]
     top_ice_chart_items = [
-        (f'{r.get("站点","")} {r.get("年份","")}', float(r.get("覆冰厚度>0分钟占比%", 0) or 0))
+        (f'{r.get("station","")} {r.get("year","")}', float(r.get("positive_ice_thickness_minutes_percentage", 0) or 0))
         for r in top_ice_stations
     ]
     top_fog_chart_items = [
-        (f'{r.get("站点","")} {r.get("年份","")}', float(r.get("雾或能见度<1000m分钟占比%", 0) or 0))
+        (f'{r.get("station","")} {r.get("year","")}', float(r.get("fog_or_visibility_lt_1000m_minutes_percentage", 0) or 0))
         for r in top_fog_stations
     ]
     low_cov_chart_items = [
-        (f'{r.get("站点","")} {r.get("年份","")}', float(r.get("按自然年完整率%", 0) or 0))
+        (f'{r.get("station","")} {r.get("year","")}', float(r.get("calendar_year_completeness_percentage", 0) or 0))
         for r in low_coverage
     ]
 
-    md = f"""# 凝结类天气数据综合分析报告
+    md = f"""# Condensation-Weather Data Analysis Report
 
-生成时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+Generated at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
-## 1. 数据概况
+## 1. Data overview
 
-- 数据目录：`{DATA_ROOT}`
-- CSV 文件：{len(csv_paths)} 个，合计约 {total_size:.2f} GB
-- 覆盖年份：{", ".join(year_count)}
-- 站点数量：{station_count} 个；站点-年份文件：{len(station_year_rows)} 个
-- 时间粒度：1 分钟级观测
-- 总记录数：{global_agg.rows:,} 条
-- 全库时间范围：{ts_to_text(global_agg.first_time)} 至 {ts_to_text(global_agg.last_time)}
+- Data directory: `{DATA_ROOT}`
+- CSV files: {len(csv_paths)}, totaling approximately {total_size:.2f} GB
+- Years: {", ".join(year_count)}
+- Stations: {station_count}; station-year files: {len(station_year_rows)}
+- Temporal resolution: 1 minute
+- Total records: {global_agg.rows:,}
+- Overall date range: {ts_to_text(global_agg.first_time)} to {ts_to_text(global_agg.last_time)}
 
-## 2. 关键结论
+## 2. Key findings
 
-1. 数据主体是 2022-2024 年福建山地/高海拔站点的分钟级气象与覆冰观测，字段完整度整体较好，但个别站点-年份文件明显不完整。
-2. `覆冰厚度 > 0` 的实际覆冰记录共有 {ice_minutes:,} 分钟，占全库 {pct(ice_minutes, global_agg.rows):.4f}%；`覆冰类型` 有记录共有 {ice_type_minutes:,} 分钟，占 {pct(ice_type_minutes, global_agg.rows):.4f}%。
-3. 雾或低能见度记录共有 {fog_minutes:,} 分钟，占全库 {pct(fog_minutes, global_agg.rows):.2f}%，说明“凝结/雾”环境远比实际覆冰厚度事件更常见。
-4. 低温高湿潜势条件较集中：`气温<=2℃且湿度>=95%` 共 {cold_moist_minutes:,} 分钟，`气温<=0℃且湿度>=90%` 共 {freezing_humid_minutes:,} 分钟。
-5. 全库平均气温 {format_number(avg_temp)}℃，温度范围 {format_number(min_temp)}℃ 至 {format_number(max_temp)}℃；平均相对湿度 {format_number(avg_rh)}%；平均能见度 {format_number(avg_vis)} m；最大覆冰厚度 {format_number(max_ice, 3)}。
+1. The data primarily contain minute-level weather and icing observations from mountain and high-elevation stations in Fujian during 2022–2024. Field completeness is generally good, but some station-year files are substantially incomplete.
+2. Positive ice-thickness observations total {ice_minutes:,} minutes ({pct(ice_minutes, global_agg.rows):.4f}% of all records). Recorded ice-type values total {ice_type_minutes:,} minutes ({pct(ice_type_minutes, global_agg.rows):.4f}%).
+3. Fog or low visibility occurs for {fog_minutes:,} minutes ({pct(fog_minutes, global_agg.rows):.2f}% of all records), so condensation or fog environments are much more common than positive ice-thickness events.
+4. Potential cold-humid conditions occur for {cold_moist_minutes:,} minutes at air temperature <=2 °C and relative humidity >=95%, and {freezing_humid_minutes:,} minutes at air temperature <=0 °C and relative humidity >=90%.
+5. Mean air temperature is {format_number(avg_temp)} °C, ranging from {format_number(min_temp)} °C to {format_number(max_temp)} °C. Mean relative humidity is {format_number(avg_rh)}%, mean visibility is {format_number(avg_vis)} m, and maximum ice thickness is {format_number(max_ice, 3)}.
 
-## 3. 数据质量审计
+## 3. Data-quality audit
 
-### 覆盖率最低的站点-年份
+### Station-years with the lowest coverage
 
-{markdown_table(low_coverage, ["城市", "站点", "年份", "记录数", "按自然年完整率%", "起始时间", "结束时间", "序列缺口分钟"], 12)}
+{markdown_table(low_coverage, ["city", "station", "year", "records", "calendar_year_completeness_percentage", "start_time", "end_time", "sequence_gap_minutes"], 12)}
 
-### 缺失率最高字段
+### Fields with the highest missingness
 
-{markdown_table(sorted(missing_rows, key=lambda r: r["缺失率%"], reverse=True), ["字段", "缺失或--记录数", "缺失率%"], 12)}
+{markdown_table(sorted(missing_rows, key=lambda r: r["missing_percentage"], reverse=True), ["field", "missing_or_marker_records", "missing_percentage"], 12)}
 
-### 异常值检查
+### Anomaly checks
 
-{markdown_table(anomaly_rows, ["异常类型", "记录数", "占比%"], 12)}
+{markdown_table(anomaly_rows, ["anomaly_type", "records", "percentage"], 12)}
 
-## 4. 覆冰事件分析
+## 4. Icing-event analysis
 
-事件定义：以 `覆冰厚度 > 0` 为实际覆冰判据；连续覆冰观测之间若间隔不超过 {MERGE_GAP_MINUTES} 分钟，则合并为同一事件。该定义能容忍短时传输缺测或传感器短暂回零。
+An icing event is defined by positive ice thickness. Consecutive positive observations separated by no more than {MERGE_GAP_MINUTES} minutes are merged into one event, allowing short transmission gaps or brief sensor resets to zero.
 
-- 覆冰事件数：{len(events):,}
-- 覆冰观测分钟：{ice_minutes:,}
-- 全库覆冰分钟占比：{pct(ice_minutes, global_agg.rows):.4f}%
-- 最大覆冰厚度：{format_number(max_ice, 3)}
+- Icing events: {len(events):,}
+- Positive-icing observation minutes: {ice_minutes:,}
+- Positive-icing share of all minutes: {pct(ice_minutes, global_agg.rows):.4f}%
+- Maximum ice thickness: {format_number(max_ice, 3)}
 
-### 峰值覆冰厚度最高事件
+### Events with the greatest peak ice thickness
 
-{markdown_table(top_events, ["站点", "城市", "年份", "开始时间", "结束时间", "持续分钟_含合并间断", "覆冰观测分钟", "峰值覆冰厚度", "峰值时间"], 20)}
+{markdown_table(top_events, ["station", "city", "year", "start_time", "end_time", "elapsed_minutes_including_merged_gaps", "icing_observation_minutes", "peak_ice_thickness", "peak_time"], 20)}
 
-### 覆冰分钟最多的站点-年份
+### Station-years with the most positive-icing minutes
 
-{markdown_table(top_ice_stations, ["城市", "站点", "年份", "覆冰厚度>0分钟", "覆冰厚度>0占比%", "覆冰厚度最大值", "气温均值", "相对湿度均值"], 15)}
+{markdown_table(top_ice_stations, ["city", "station", "year", "positive_ice_thickness_minutes", "positive_ice_thickness_minutes_percentage", "ice_thickness_maximum", "air_temperature_mean", "relative_humidity_mean"], 15)}
 
-## 5. 雾、低能见度与凝结环境
+## 5. Fog, low visibility, and condensation environments
 
-### 雾/低能见度占比最高的站点-年份
+### Station-years with the largest fog or low-visibility share
 
-{markdown_table(top_fog_stations, ["城市", "站点", "年份", "雾或能见度<1000m分钟", "雾或能见度<1000m占比%", "能见度均值", "气温均值", "相对湿度均值"], 15)}
+{markdown_table(top_fog_stations, ["city", "station", "year", "fog_or_visibility_lt_1000m_minutes", "fog_or_visibility_lt_1000m_minutes_percentage", "visibility_mean", "air_temperature_mean", "relative_humidity_mean"], 15)}
 
-### 降水天气现象 Top 15
+### Top 15 precipitation phenomena
 
-{markdown_table(top_counter(global_agg.precip_counter, 15), ["类别", "记录数", "占比%"], 15)}
+{markdown_table(top_counter(global_agg.precip_counter, 15), ["category", "records", "percentage"], 15)}
 
-### 视程障碍 Top 15
+### Top 15 visibility obstructions
 
-{markdown_table(top_counter(global_agg.obstacle_counter, 15), ["类别", "记录数", "占比%"], 15)}
+{markdown_table(top_counter(global_agg.obstacle_counter, 15), ["category", "records", "percentage"], 15)}
 
-## 6. 季节性
+## 6. Seasonality
 
-月度统计表见 `analysis_outputs/month_summary.csv`。整体建议重点关注冬季及早春月份，因为低温高湿和实际覆冰更容易同时出现；雾/低能见度则在多个月份均较常见，需要和温度阈值联合筛选。
+See `analysis_outputs/month_summary.csv` for monthly statistics. Winter and early spring deserve particular attention because cold-humid conditions and observed icing are more likely to coincide. Fog and low visibility occur in more months and should be screened jointly with temperature.
 
-## 7. 建模与业务建议
+## 7. Modelling recommendations
 
-1. 后续若要做覆冰预警模型，建议将 `覆冰厚度>0` 作为强标签，将 `气温<=2℃且湿度>=95%`、`雾或能见度<1000m`、`十分钟平均风速`、`气压变化`、`小时降雨` 作为候选特征。
-2. `小时降雨` 是分钟表中的小时尺度字段，不建议直接逐分钟累加；若要估计小时/日降水量，应先按小时取最大值或末值，再汇总。
-3. 对低覆盖文件应单独剔除或降权，尤其是完整率极低的站点-年份，避免拉偏季节性或站点排序。
-4. 建议从经纬度图片或原始站点台账中整理结构化站点表，增加海拔、经纬度、地形暴露度，空间解释会明显增强。
-5. 对覆冰厚度可进一步设分级：轻微 `0-1`、中等 `1-5`、较强 `>5`，结合持续时间构建“事件强度指数”。
+1. Use positive ice thickness as a strong alert-modelling label. Candidate features include joint temperature <=2 °C and relative humidity >=95%, fog or visibility below 1,000 m, ten-minute mean wind speed, pressure change, and hourly rain.
+2. Hourly rain is an hourly field repeated in minute data and must not be summed by minute. Estimate hourly or daily precipitation after taking an hourly maximum or final value.
+3. Exclude or down-weight low-coverage files, especially severely incomplete station-years, to avoid distorting seasonal or station rankings.
+4. Build a structured station table from the original register, including elevation, coordinates, and terrain exposure, to strengthen spatial interpretation.
+5. Ice thickness may be stratified as minor (0–1), moderate (1–5), and strong (>5) and combined with duration in an event-intensity index.
 
-## 8. 输出文件
+## 8. Output files
 
-- `analysis_outputs/station_year_summary.csv`：站点-年份完整统计
-- `analysis_outputs/month_summary.csv`：全库月度统计
-- `analysis_outputs/station_month_summary.csv`：站点-月份统计
-- `analysis_outputs/top_icing_events.csv`：峰值覆冰事件
-- `analysis_outputs/missingness_summary.csv`：字段缺失率
-- `analysis_outputs/anomaly_summary.csv`：异常值扫描
-- `analysis_outputs/phenomena_summary.csv`：天气现象/视程障碍频次
-- `analysis_outputs/report.html`：带图表的 HTML 报告
+- `analysis_outputs/station_year_summary.csv`: complete station-year statistics
+- `analysis_outputs/month_summary.csv`: monthly statistics for all data
+- `analysis_outputs/station_month_summary.csv`: station-month statistics
+- `analysis_outputs/top_icing_events.csv`: peak icing events
+- `analysis_outputs/missingness_summary.csv`: field missingness
+- `analysis_outputs/anomaly_summary.csv`: anomaly scan
+- `analysis_outputs/phenomena_summary.csv`: weather-phenomenon and visibility-obstruction frequencies
+- `analysis_outputs/report.html`: HTML report with charts
 """
     (OUTPUT_ROOT / "comprehensive_report.md").write_text(md, encoding="utf-8")
 
     html_doc = f"""<!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>凝结类天气数据综合分析报告</title>
+<title>Condensation-Weather Data Analysis Report</title>
 <style>
-body {{ font-family: "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; margin: 0; color: #1f2933; background: #f6f7f4; }}
+body {{ font-family: Arial, sans-serif; margin: 0; color: #1f2933; background: #f6f7f4; }}
 main {{ max-width: 1180px; margin: 0 auto; padding: 32px 24px 56px; }}
 h1, h2 {{ color: #143642; }}
 .summary {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 20px 0; }}
@@ -834,27 +842,27 @@ code {{ background: #eef2ec; padding: 2px 5px; border-radius: 4px; }}
 </head>
 <body>
 <main>
-<h1>凝结类天气数据综合分析报告</h1>
-<p class="note">生成时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}；事件定义：<code>覆冰厚度 &gt; 0</code>，间断不超过 {MERGE_GAP_MINUTES} 分钟合并。</p>
+<h1>Condensation-Weather Data Analysis Report</h1>
+<p class="note">Generated at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}. Event definition: positive ice thickness, merging gaps no longer than {MERGE_GAP_MINUTES} minutes.</p>
 <section class="summary">
-<div class="metric"><b>{len(csv_paths)}</b>CSV 文件</div>
-<div class="metric"><b>{station_count}</b>站点</div>
-<div class="metric"><b>{global_agg.rows:,}</b>分钟记录</div>
-<div class="metric"><b>{ice_minutes:,}</b>覆冰分钟</div>
-<div class="metric"><b>{pct(ice_minutes, global_agg.rows):.4f}%</b>覆冰分钟占比</div>
-<div class="metric"><b>{fog_minutes:,}</b>雾/低能见度分钟</div>
+<div class="metric"><b>{len(csv_paths)}</b>CSV files</div>
+<div class="metric"><b>{station_count}</b>stations</div>
+<div class="metric"><b>{global_agg.rows:,}</b>minute records</div>
+<div class="metric"><b>{ice_minutes:,}</b>positive-icing minutes</div>
+<div class="metric"><b>{pct(ice_minutes, global_agg.rows):.4f}%</b>positive-icing share</div>
+<div class="metric"><b>{fog_minutes:,}</b>fog/low-visibility minutes</div>
 </section>
-<div class="panel">{svg_line_chart(month_ice_chart_items, "月度覆冰分钟占比", value_suffix="%")}</div>
-<div class="panel">{svg_line_chart(month_fog_chart_items, "月度雾或低能见度分钟占比", value_suffix="%")}</div>
-<div class="panel">{svg_bar_chart(top_ice_chart_items, "覆冰占比最高的站点-年份", value_suffix="%")}</div>
-<div class="panel">{svg_bar_chart(top_fog_chart_items, "雾/低能见度占比最高的站点-年份", value_suffix="%")}</div>
-<div class="panel">{svg_bar_chart(low_cov_chart_items, "完整率最低的站点-年份", value_suffix="%")}</div>
-<h2>峰值覆冰事件 Top 20</h2>
-<div class="panel">{html_table(top_events, ["站点", "城市", "年份", "开始时间", "结束时间", "持续分钟_含合并间断", "覆冰观测分钟", "峰值覆冰厚度", "峰值时间"], 20)}</div>
-<h2>字段缺失率 Top 12</h2>
-<div class="panel">{html_table(sorted(missing_rows, key=lambda r: r["缺失率%"], reverse=True), ["字段", "缺失或--记录数", "缺失率%"], 12)}</div>
-<h2>说明</h2>
-<p class="note">降水量字段没有直接逐分钟累加；若需要日降水或年降水，应先按小时窗口聚合。完整 CSV 输出位于 <code>analysis_outputs</code>。</p>
+<div class="panel">{svg_line_chart(month_ice_chart_items, "Monthly positive-icing share", value_suffix="%")}</div>
+<div class="panel">{svg_line_chart(month_fog_chart_items, "Monthly fog or low-visibility share", value_suffix="%")}</div>
+<div class="panel">{svg_bar_chart(top_ice_chart_items, "Station-years with the greatest positive-icing share", value_suffix="%")}</div>
+<div class="panel">{svg_bar_chart(top_fog_chart_items, "Station-years with the greatest fog or low-visibility share", value_suffix="%")}</div>
+<div class="panel">{svg_bar_chart(low_cov_chart_items, "Station-years with the lowest completeness", value_suffix="%")}</div>
+<h2>Top 20 Events by Peak Ice Thickness</h2>
+<div class="panel">{html_table(top_events, ["station", "city", "year", "start_time", "end_time", "elapsed_minutes_including_merged_gaps", "icing_observation_minutes", "peak_ice_thickness", "peak_time"], 20)}</div>
+<h2>Top 12 Fields by Missingness</h2>
+<div class="panel">{html_table(sorted(missing_rows, key=lambda r: r["missing_percentage"], reverse=True), ["field", "missing_or_marker_records", "missing_percentage"], 12)}</div>
+<h2>Notes</h2>
+<p class="note">Precipitation is not summed directly across minute rows. Aggregate by hourly windows before estimating daily or annual precipitation. Complete CSV outputs are in <code>analysis_outputs</code>.</p>
 </main>
 </body>
 </html>
@@ -904,7 +912,7 @@ def analyze(max_files: int | None = None) -> None:
                     file_agg.station_id = first_non_missing(chunk[STATION_ID_COL])
                     file_agg.city = infer_city(file_agg.station)
                 if not global_agg.first_time:
-                    global_agg.station = "全库"
+                    global_agg.station = "All data"
 
                 times = parse_times(chunk[TIME_COL])
                 numeric = {col: numeric_series(chunk[col]) for col in NUMERIC_COLS}
@@ -942,7 +950,7 @@ def analyze(max_files: int | None = None) -> None:
                     month_mask = valid_months == month
                     sub_numeric = {col: values[month_mask] for col, values in numeric.items()}
                     sub_chunk = chunk.loc[month_mask]
-                    month_base = Aggregate(station="全库", city="全库", folder_year=month[:4])
+                    month_base = Aggregate(station="All data", city="All data", folder_year=month[:4])
                     month_conditions = {name: mask[month_mask] for name, mask in conditions.items()}
                     update_group_aggregate(
                         month_aggs,
@@ -972,7 +980,7 @@ def analyze(max_files: int | None = None) -> None:
                         sub_chunk,
                     )
         except Exception as exc:
-            file_agg.anomaly_counts["文件读取失败"] += 1
+            file_agg.anomaly_counts["file_read_failure"] += 1
             print(f"  !! failed: {exc}", flush=True)
 
         closed = event_state.close()
@@ -980,7 +988,7 @@ def analyze(max_files: int | None = None) -> None:
             events.append(closed)
         station_year_aggs.append(file_agg)
 
-    station_year_rows = [aggregate_to_row(agg, "站点-年份") for agg in station_year_aggs]
+    station_year_rows = [aggregate_to_row(agg, "station-year") for agg in station_year_aggs]
     month_rows = [month_row(key[0], agg) for key, agg in sorted(month_aggs.items())]
     station_month_rows = [month_row(key[1], agg) for key, agg in sorted(station_month_aggs.items(), key=lambda item: (item[0][0], item[0][1]))]
 

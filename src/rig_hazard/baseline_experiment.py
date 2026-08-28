@@ -634,7 +634,7 @@ def evaluate_warning_operating_points(
 
 def markdown_table(rows: list[dict[str, Any]], columns: list[str], digits: int = 5) -> str:
     if not rows:
-        return "无。"
+        return "None."
     lines = ["| " + " | ".join(columns) + " |", "| " + " | ".join(["---"] * len(columns)) + " |"]
     for row in rows:
         values: list[str] = []
@@ -666,18 +666,18 @@ def build_baseline_report(
     meaningful_wins = sum(value > 0.01 for value in relative_improvements.values())
     meaningful_losses = sum(value < -0.01 for value in relative_improvements.values())
     if meaningful_wins >= 2:
-        calibration_judgment = "当前线性local weather hazard在至少两个校准指标上取得超过1%的相对改善，初步支持hazard校准假设。"
+        calibration_judgment = "The current linear local weather hazard improves at least two calibration metrics by more than 1% relative, providing preliminary support for the hazard-calibration hypothesis."
     elif meaningful_losses >= 2:
-        calibration_judgment = "当前线性local weather hazard在至少两个校准指标上明显差于普通logit单步分类器，hazard校准假设暂不成立。"
+        calibration_judgment = "The current linear local weather hazard is materially worse than the ordinary one-step logistic classifier on at least two calibration metrics, so the hazard-calibration hypothesis is not currently supported."
     else:
-        calibration_judgment = "local_weather_hazard与普通logit单步分类器的校准差异不足1%，当前应判定为实质相当，不能宣称hazard更好。"
+        calibration_judgment = "The calibration difference between local weather hazard and the ordinary one-step logistic classifier is below 1%; they are materially equivalent and the hazard model cannot be claimed as better."
     matched = [row for row in warning_rows if row["operating_point"] == "test::matched_budget_diagnostic"]
     hazard_warning = next(row for row in matched if row["model"].startswith("local_weather_hazard_"))
     direct_warning = next(row for row in matched if row["model"].startswith("direct_logit_"))
     lead_judgment = (
-        "在测试集匹配误报预算下，local_weather_hazard的平均有效提前量至少增加0.1小时。"
+        "At the matched test-set false-alarm budget, local weather hazard increases mean effective lead time by at least 0.1 hours."
         if hazard_warning["mean_effective_lead_hours"] > direct_warning["mean_effective_lead_hours"] + 0.1
-        else "在测试集匹配误报预算下，local_weather_hazard尚未获得至少0.1小时的有效提前量改善。"
+        else "At the matched test-set false-alarm budget, local weather hazard does not improve mean effective lead time by at least 0.1 hours."
     )
     optimizer_rows = [
         {
@@ -703,47 +703,47 @@ def build_baseline_report(
         "median_effective_lead_hours",
         "hard_negative_far",
     ]
-    return f"""# RIG-Hazard rule/local-hazard基线实验报告
+    return f"""# RIG-Hazard Rule and Local-Hazard Baseline Report
 
-生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-## 实验定位
+## Experiment scope
 
-- `cold_humid_rule`、`strict_condensation_rule`：非学习型规则基线。
-- `local_weather_hazard`：同站点局地特征的cloglog离散时间hazard。
-- 普通分类器：同风险集、同特征的logit单步分类器，以及1/3/6小时直接logit分类器。
-- `local_weather_hazard`多时效风险使用当前发报时刻的事件率进行冻结协变量累积，不读取未来气象观测。
-- 训练保留全部事件前6小时窗口，对抽样的hard/easy negatives使用逆概率权重。
+- `cold_humid_rule` and `strict_condensation_rule` are non-learning rule baselines.
+- `local_weather_hazard` is a cloglog discrete-time hazard using local features from the same station.
+- Ordinary classifiers comprise a one-step logistic model and direct 1-hour, 3-hour, and 6-hour logistic models on the same risk set and features.
+- Multi-horizon risk for `local_weather_hazard` accumulates the event rate at issue time under frozen covariates and never reads future weather observations.
+- Training retains every 6-hour pre-event window and applies inverse-probability weights to sampled hard and easy negatives.
 
-## 训练样本
+## Training samples
 
 ```json
 {json.dumps(sample_summary, ensure_ascii=False, indent=2)}
 ```
 
-## 优化状态
+## Optimization status
 
 {markdown_table(optimizer_rows, ['model', 'link', 'converged', 'iterations', 'objective'])}
 
-## 校准参数
+## Calibration parameters
 
 {markdown_table(calibration_rows, sorted({key for row in calibration_rows for key in row}))}
 
-## 测试集概率指标
+## Test-set probability metrics
 
 {markdown_table(test_metrics, probability_columns)}
 
-## 事件预警指标
+## Event-warning metrics
 
 {markdown_table(warning_rows, warning_columns)}
 
-## 当前判断
+## Conclusions
 
 1. {calibration_judgment}
 2. {lead_judgment}
-3. 这些结果只代表线性、非图local weather hazard基线；hierarchical barrier层次站点屏障和unfiltered graph稀疏滞后图尚未加入。
+3. These results cover only the linear non-graph local weather hazard baseline; the hierarchical station barrier and unfiltered sparse lag graph are not included.
 
-完整模型、预测和CSV指标位于：`{output_root}`
+Complete models, predictions, and CSV metrics: `{output_root}`
 """
 
 

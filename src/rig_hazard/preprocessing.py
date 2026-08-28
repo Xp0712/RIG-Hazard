@@ -19,29 +19,40 @@ from .config import PROJECT_ROOT, resolve_project_path
 
 
 MISSING_MARKERS = {"", "--", "nan", "NaN", "NAN", "null", "NULL", "None", "none"}
-CITY_PREFIXES = ("武夷山", "龙岩", "泉州", "宁德", "南平", "三明")
+CITY_PREFIXES = (
+    "\u6b66\u5937\u5c71",
+    "\u9f99\u5ca9",
+    "\u6cc9\u5dde",
+    "\u5b81\u5fb7",
+    "\u5357\u5e73",
+    "\u4e09\u660e",
+)
 
 RAW_COLUMN_MAP = {
-    "观测时间": "timestamp",
-    "站点名称": "station_name",
-    "站点编号": "station_code",
-    "站点ID": "station_id",
-    "设备电压": "device_voltage",
-    "覆冰厚度": "ice_thickness",
-    "结冰传感器频率": "ice_sensor_frequency",
-    "气温": "air_temperature",
-    "相对湿度": "relative_humidity",
-    "气压": "station_pressure",
-    "雨": "rain",
-    "小时降雨": "hourly_rain",
-    "十分钟平均风向": "wind_direction",
-    "十分钟平均风速": "wind_speed",
-    "能见度": "visibility",
-    "一分钟能见度": "visibility_alias",
-    "十分钟能见度": "visibility_10min",
-    "降水天气现象": "precipitation_phenomenon",
-    "视程障碍": "visibility_obstacle",
+    "\u89c2\u6d4b\u65f6\u95f4": "timestamp",
+    "\u7ad9\u70b9\u540d\u79f0": "station_name",
+    "\u7ad9\u70b9\u7f16\u53f7": "station_code",
+    "\u7ad9\u70b9ID": "station_id",
+    "\u8bbe\u5907\u7535\u538b": "device_voltage",
+    "\u8986\u51b0\u539a\u5ea6": "ice_thickness",
+    "\u7ed3\u51b0\u4f20\u611f\u5668\u9891\u7387": "ice_sensor_frequency",
+    "\u6c14\u6e29": "air_temperature",
+    "\u76f8\u5bf9\u6e7f\u5ea6": "relative_humidity",
+    "\u6c14\u538b": "station_pressure",
+    "\u96e8": "rain",
+    "\u5c0f\u65f6\u964d\u96e8": "hourly_rain",
+    "\u5341\u5206\u949f\u5e73\u5747\u98ce\u5411": "wind_direction",
+    "\u5341\u5206\u949f\u5e73\u5747\u98ce\u901f": "wind_speed",
+    "\u80fd\u89c1\u5ea6": "visibility",
+    "\u4e00\u5206\u949f\u80fd\u89c1\u5ea6": "visibility_alias",
+    "\u5341\u5206\u949f\u80fd\u89c1\u5ea6": "visibility_10min",
+    "\u964d\u6c34\u5929\u6c14\u73b0\u8c61": "precipitation_phenomenon",
+    "\u89c6\u7a0b\u969c\u788d": "visibility_obstacle",
 }
+RAW_COLUMN_BY_CANONICAL = {canonical: raw for raw, canonical in RAW_COLUMN_MAP.items()}
+RAW_FOG_TOKEN = "\u96fe"
+RAW_SNOW_TOKEN = "\u96ea"
+RAW_FREEZING_RAIN_TOKEN = "\u51bb\u96e8"
 
 NUMERIC_RAW_COLUMNS = (
     "device_voltage",
@@ -250,11 +261,11 @@ def infer_city(station_name: str) -> str:
     for prefix in CITY_PREFIXES:
         if station_name.startswith(prefix):
             return prefix
-    return "未识别"
+    return "Unknown"
 
 
 def infer_year(path: Path) -> int | None:
-    match = re.search(r"(20\d{2})年", path.parent.name)
+    match = re.search(r"(20\d{2})", path.parent.name)
     return int(match.group(1)) if match else None
 
 
@@ -283,18 +294,18 @@ def scan_source(path: Path, data_root: Path) -> SourceInfo:
     station_code = ""
     station_id = ""
     if not preview.empty:
-        if "站点名称" in preview:
-            values = clean_text(preview["站点名称"])
+        if RAW_COLUMN_BY_CANONICAL["station_name"] in preview:
+            values = clean_text(preview[RAW_COLUMN_BY_CANONICAL["station_name"]])
             valid = values[~values.isin(MISSING_MARKERS)]
             if not valid.empty:
                 station_name = str(valid.iloc[0])
-        if "站点编号" in preview:
-            values = clean_text(preview["站点编号"])
+        if RAW_COLUMN_BY_CANONICAL["station_code"] in preview:
+            values = clean_text(preview[RAW_COLUMN_BY_CANONICAL["station_code"]])
             valid = values[~values.isin(MISSING_MARKERS)]
             if not valid.empty:
                 station_code = str(valid.iloc[0])
-        if "站点ID" in preview:
-            values = clean_text(preview["站点ID"])
+        if RAW_COLUMN_BY_CANONICAL["station_id"] in preview:
+            values = clean_text(preview[RAW_COLUMN_BY_CANONICAL["station_id"]])
             valid = values[~values.isin(MISSING_MARKERS)]
             if not valid.empty:
                 station_id = str(valid.iloc[0])
@@ -372,10 +383,10 @@ def canonicalize_chunk(chunk: pd.DataFrame, expected_year: int, valid_ranges: di
 
     obstacle = clean_text(renamed["visibility_obstacle"])
     phenomenon = clean_text(renamed["precipitation_phenomenon"])
-    result["fog_flag"] = obstacle.str.contains("雾", regex=False, na=False).astype(np.int8)
+    result["fog_flag"] = obstacle.str.contains(RAW_FOG_TOKEN, regex=False, na=False).astype(np.int8)
     result["precipitation_flag"] = (~phenomenon.isin(MISSING_MARKERS)).astype(np.int8)
-    result["snow_flag"] = phenomenon.str.contains("雪", regex=False, na=False).astype(np.int8)
-    result["freezing_rain_flag"] = phenomenon.str.contains("冻雨", regex=False, na=False).astype(np.int8)
+    result["snow_flag"] = phenomenon.str.contains(RAW_SNOW_TOKEN, regex=False, na=False).astype(np.int8)
+    result["freezing_rain_flag"] = phenomenon.str.contains(RAW_FREEZING_RAIN_TOKEN, regex=False, na=False).astype(np.int8)
     return result
 
 
@@ -1042,7 +1053,7 @@ def config_feature_contract(config: dict[str, Any]) -> dict[str, Any]:
 
 def markdown_table(rows: list[dict[str, Any]], columns: list[str], limit: int = 100) -> str:
     if not rows:
-        return "无。"
+        return "None."
     lines = ["| " + " | ".join(columns) + " |", "| " + " | ".join(["---"] * len(columns)) + " |"]
     for row in rows[:limit]:
         lines.append("| " + " | ".join(str(format_scalar(row.get(column, ""))) for column in columns) + " |")
@@ -1070,55 +1081,55 @@ def build_quality_report(
     hard_totals = {column: sum(int(row.get(column, 0)) for row in station_summaries) for column in hard_columns}
     coordinate_count = sum(1 for row in catalog if row["longitude"] != "" and pd.notna(row["longitude"]))
     summary_columns = ["station_code", "station_name", "years", "raw_rows", "cold_candidate_events", "valid_events", "risk_rows", "hazard_positive_rows", *hard_columns]
-    hard_lines = "\n".join(f"- `{column}`：{value:,} 条。" for column, value in hard_totals.items())
+    hard_lines = "\n".join(f"- `{column}`: {value:,} rows." for column, value in hard_totals.items())
     anomaly_rows = [{"item": key, "count": value} for key, value in sorted(anomaly_counts.items()) if value]
-    return f"""# RIG-Hazard预处理质量报告
+    return f"""# RIG-Hazard Preprocessing Quality Report
 
-生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-## 口径
+## Contract
 
-- 原始分钟记录按 `{int(config['time_step_minutes'])}` 分钟聚合。
-- 每行特征只使用 `[issue_time-Δt, issue_time)` 内观测，主标签表示 `[issue_time, issue_time+Δt)` 是否发生有效起冰，避免把起冰后的观测泄漏给模型。
-- 任意正覆冰过程均从物理风险集中剔除；主标签仅使用事件最低气温不高于 `{float(config['event']['cold_plausible_temperature_c'])}` ℃的事件。
-- 事件结束后剔除 `{int(config['event']['cooldown_minutes'])}` 分钟冷却窗口。
-- 覆冰厚度只用于事件和标签构造，已列入禁止模型输入字段。
+- Raw minute records are aggregated to `{int(config['time_step_minutes'])}`-minute intervals.
+- Features in each row use observations only from `[issue_time-Δt, issue_time)`. The primary label indicates a valid icing onset in `[issue_time, issue_time+Δt)`, preventing post-onset observations from leaking into the model.
+- Every positive-icing episode is excluded from the physical risk set. Primary labels use only events whose minimum temperature is no greater than `{float(config['event']['cold_plausible_temperature_c'])}` °C.
+- A `{int(config['event']['cooldown_minutes'])}`-minute cooldown is excluded after each event.
+- Ice thickness is used only to construct events and labels and is explicitly prohibited as a model input.
 
-## 总体结果
+## Overall results
 
-- 扫描CSV：{len(sources):,} 个，其中空文件：{sum(int(source.empty) for source in sources):,} 个。
-- 有效站点：{len(catalog):,} 个；具有经纬度：{coordinate_count:,} 个。
-- 扫描原始记录：{source_rows:,} 行。
-- 10分钟全时轴：{timeline_rows:,} 行。
-- 全部正覆冰过程：{len(events):,} 次；冷条件候选事件：{len(cold_events):,} 次；冷却窗口外可建模复发事件：{len(valid_events):,} 次。
-- 可落入无泄漏风险集的有效起冰标签：{len(captured_events):,} 次，事件保留率：{(100 * len(captured_events) / len(valid_events) if valid_events else 0):.2f}%。
-- 风险集样本：{risk_rows:,} 条；一步hazard正样本：{positives:,} 条。
+- CSV files scanned: {len(sources):,}, including {sum(int(source.empty) for source in sources):,} empty files.
+- Valid stations: {len(catalog):,}; stations with coordinates: {coordinate_count:,}.
+- Raw records scanned: {source_rows:,}.
+- Full 10-minute timeline: {timeline_rows:,} rows.
+- Positive-icing episodes: {len(events):,}; cold-condition candidates: {len(cold_events):,}; modelled recurrent events outside cooldown: {len(valid_events):,}.
+- Valid onset labels captured in the leakage-free risk set: {len(captured_events):,}; event retention: {(100 * len(captured_events) / len(valid_events) if valid_events else 0):.2f}%.
+- Risk-set samples: {risk_rows:,}; one-step positive hazard samples: {positives:,}.
 {hard_lines}
 
-## 站点明细
+## Station details
 
 {markdown_table(station_summaries, summary_columns, 100)}
 
-## 数据切分
+## Data splits
 
 {markdown_table(split_summaries, ['scheme', 'split', 'timeline_rows', 'risk_rows', 'hazard_positive_rows', *hard_columns], 20)}
 
-## 清洗记录
+## Cleaning log
 
 {markdown_table(anomaly_rows, ['item', 'count'], 100)}
 
-## 输出契约
+## Output contract
 
-- `timelines/`：站点-年份10分钟全时轴；训练时筛选 `risk_set == 1`。
-- `events_recurrent.csv`：全部事件及有效目标标记。
-- `station_catalog.csv`：站点、城市、经纬度、海拔和索引。
-- `spatial_candidate_edges.csv`：仅作为后续滞后图筛选候选，不是最终图。
-- `feature_contract.json`：模型输入、标签、切分和禁止泄漏字段。
-- `normalization_development.json`：只用开发切分训练段计算。
-- `normalization_final.json`：只用最终切分训练段计算。
-- `manifest.json`：配置哈希、源文件清单和产物清单。
+- `timelines/`: full station-year 10-minute timelines; training filters to `risk_set == 1`.
+- `events_recurrent.csv`: all events and valid-target indicators.
+- `station_catalog.csv`: station, city, coordinates, elevation, and indices.
+- `spatial_candidate_edges.csv`: candidates for later lag-graph screening, not the final graph.
+- `feature_contract.json`: model inputs, labels, splits, and prohibited leakage fields.
+- `normalization_development.json`: computed only from the development split's training segment.
+- `normalization_final.json`: computed only from the final split's training segment.
+- `manifest.json`: configuration hash, source-file inventory, and artifact inventory.
 
-输出目录：`{output_root}`
+Output directory: `{output_root}`
 """
 
 

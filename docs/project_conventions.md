@@ -1,64 +1,108 @@
-# 项目结构与命名规范
+# Project and Documentation Conventions
 
-本项目的公开名称为 **RIG-Hazard**，主概率模型统一命名为
-`local_weather_hazard`。新文件、新配置、新结果目录和用户可见报告均使用功能语义命名，
-不再使用迭代序号或阶段编号。
+The public project name is **RIG-Hazard**, and the primary probability model is
+`local_weather_hazard`. New files, configurations, result directories, and
+user-facing reports use stable functional names instead of iteration or phase
+numbers.
 
-## 目录职责
+## Directory responsibilities
 
-| 目录 | 职责 | 命名方式 |
+| Directory | Responsibility | Naming pattern |
 | --- | --- | --- |
-| `src/rig_hazard/` | 可复用的模型、控制器和评价代码 | 名词或领域概念，如 `risk_trajectory.py` |
-| `configs/` | 可复现实验合同 | `rig_hazard_<用途>.json` |
-| `scripts/` | 可直接运行的维护与实验脚本 | 动词开头，如 `run_`、`export_`、`inspect_` |
-| `tests/` | 单元和回归测试 | 与被测模块对应的 `test_<模块>.py` |
-| `requirements/` | 分层依赖清单 | 按作用域命名，如 `runtime.txt` |
-| `docs/` | 长期维护文档 | 小写 `snake_case.md` |
-| `results/` | 不可变实验产物 | 按模型或实验目的命名 |
-| `visualization/` | 论文图与集中导出的可视化产物 | 按图件用途命名 |
+| `src/rig_hazard/` | Reusable model, controller, and evaluation code | Domain nouns such as `risk_trajectory.py` |
+| `configs/` | Reproducible experiment contracts | `rig_hazard_<purpose>.json` |
+| `scripts/` | Directly executable experiment and maintenance entry points | Verb prefixes such as `run_`, `export_`, and `inspect_` |
+| `tests/` | Unit and regression tests | `test_<module>.py` |
+| `requirements/` | Layered dependency specifications | Scope names such as `runtime.txt` |
+| `docs/` | Maintained project documentation | Lowercase `snake_case.md` |
+| `results/` | Immutable experiment artifacts | Model or experiment purpose |
+| `visualization/` | Central manuscript figures and lightweight source data | Figure purpose |
 
-顶层不得再次创建旧式源码、产物、工具或日志目录。
-源码包必须位于 `src/`；实验指标、预测、检查点和日志必须位于 `results/`；集中导出的
-论文图必须位于 `visualization/`。`src/rig_hazard/` 中，前者是源码根目录，后者是
-Python 包目录，不得把包内模块直接平铺到 `src/`。
+Do not recreate historical source, artifact, tool, or log directories at the
+repository root. Python packages belong under `src/`; experiment metrics,
+predictions, checkpoints, and logs belong under `results/`; centrally exported
+manuscript figures belong under `visualization/`. The `src/` source root and
+`src/rig_hazard/` package directory must remain separate.
 
-原始数据、冻结结果和检查点不作为源码重构对象。它们内部可能保留旧产物标识，读取兼容性
-集中在 `src/rig_hazard/naming.py` 的边界常量中；新接口不得继续传播旧标识。
+Raw data, frozen results, and checkpoints are not source-refactoring targets.
+Compatibility with historical artifact identifiers is isolated in boundary
+constants such as those in `src/rig_hazard/naming.py`; new interfaces must not
+propagate legacy names.
 
-## 文件与标识规则
+## File and identifier rules
 
-- Python、Shell、JSON 和 Markdown 文件使用小写 `snake_case`；Python 类使用 `PascalCase`，
-  函数、变量和配置键使用 `snake_case`，常量使用 `UPPER_SNAKE_CASE`。
-- 名称必须表达对象和用途，例如 `run_spatial_generalization_queue.sh`，不使用 `v2`、
-  `v3`、`m0`、`p3`、`latest`、`new`、`final2` 等时间性或顺序性名称。
-- 主模型使用 `local_weather_hazard`；主模型轨迹目录使用
-  `local_weather_hazard_trajectory`。
-- 合同变化使用语义合同 ID、日期和内容哈希记录在 manifest 中，不把版本号写入文件名。
-- 实验重复运行使用 `YYYYMMDD_HHMMSS` 时间戳或配置哈希区分；不要复制出带递增后缀的脚本。
-- 布尔值以 `is_`、`has_`、`should_`、`enable_` 开头；集合使用复数名；路径变量以
-  `_path` 或 `_root` 结尾。
+- Python, Shell, JSON, and Markdown filenames use lowercase `snake_case`.
+  Python classes use `PascalCase`; functions, variables, and configuration keys
+  use `snake_case`; constants use `UPPER_SNAKE_CASE`.
+- Names describe the object and its role. Do not use chronological names such as
+  `v2`, `v3`, `m0`, `p3`, `latest`, `new`, or `final2`.
+- The primary model identifier is `local_weather_hazard`, and its trajectory
+  directory is `local_weather_hazard_trajectory`.
+- Record contract changes with a semantic contract ID, date, and content hash in
+  a manifest rather than adding a version suffix to filenames.
+- Distinguish repeated experimental runs with a `YYYYMMDD_HHMMSS` timestamp or a
+  configuration hash. Do not clone scripts with incrementing suffixes.
+- Boolean names start with `is_`, `has_`, `should_`, or `enable_`; collection
+  names are plural; path variables end with `_path` or `_root`.
 
-## 当前语义映射
+## Documentation standards
 
-| 旧名称 | 统一名称 |
+- English is the only language for maintained documentation, source comments,
+  docstrings, command help, log messages, validation messages, and generated
+  reports. Original-language field names needed to read source datasets are data
+  contract literals, not user-facing terminology; isolate them in schema maps and
+  translate them at the ingestion boundary.
+- Write documentation as durable project reference material. Do not use
+  conversational headings such as "files you asked about", copy question-and-answer
+  exchanges into the repository, or address an individual reader.
+- Keep a single source of truth for each result. Link to the canonical artifact
+  instead of creating aliases or duplicating the same values in multiple files.
+- Keep the root README concise: project scope, frozen evaluation contract, key
+  findings, repository layout, asset retrieval, canonical results, installation,
+  and reproduction commands. Detailed numerical interpretation belongs in
+  `docs/results_analysis.md`.
+- Separate scientific results from transient operations. Do not record local test
+  counts, machine-specific paths, file-transfer summaries, temporary run status,
+  or workstation inventories in maintained documentation. Put reproducibility
+  metadata in machine-readable manifests and run logs.
+- State the evidence contract beside every headline metric: selection year,
+  frozen evaluation years, event queue, budget definition, uncertainty method,
+  and whether the result is confirmatory or diagnostic.
+- Use repository-relative paths in committed Markdown links and commands. Verify
+  every referenced path after renames.
+- Prefer short paragraphs, descriptive headings, and tables only when they make
+  mappings or comparisons easier to scan. Define abbreviations on first use.
+- Avoid mutable claims such as "all tests currently pass". Document the test
+  command; let continuous integration or the current test run report its result.
+- Generated reports follow the same language and provenance rules as handwritten
+  documents and must identify their input contract or manifest.
+
+## Canonical semantic mapping
+
+| Concept | Canonical location or identifier |
 | --- | --- |
-| Python 源码目录 | `src/rig_hazard/` |
-| 可执行脚本目录 | `scripts/` |
-| 实验产物与日志 | `results/` |
-| 集中可视化结果 | `visualization/` |
-| 默认配置 | `configs/rig_hazard_preprocessing.json` |
-| 基础依赖 | `requirements/runtime.txt` |
-| 深度学习依赖 | `requirements/deep_learning.txt` |
-| 局地天气危害率基线 | `results/local_weather_hazard_baselines/` |
-| 深度模型合同审计 | `results/deep_model_experiments/model_contract_audit/` |
-| 主模型轨迹目录 | `results/dynamic_hard_budget/local_weather_hazard_trajectory/` |
-| 空间泛化排队脚本 | `scripts/run_spatial_generalization_queue.sh` |
-| 主实验恢复脚本 | `scripts/resume_main_experiments.sh` |
+| Python source | `src/rig_hazard/` |
+| Executable scripts | `scripts/` |
+| Experiment artifacts and logs | `results/` |
+| Central visualization output | `visualization/` |
+| Default preprocessing configuration | `configs/rig_hazard_preprocessing.json` |
+| Runtime dependencies | `requirements/runtime.txt` |
+| Deep-learning dependencies | `requirements/deep_learning.txt` |
+| Local weather hazard baselines | `results/local_weather_hazard_baselines/` |
+| Deep-model contract audit | `results/deep_model_experiments/model_contract_audit/` |
+| Primary-model trajectory | `results/dynamic_hard_budget/local_weather_hazard_trajectory/` |
+| Spatial-generalization queue | `scripts/run_spatial_generalization_queue.sh` |
+| Primary experiment resume script | `scripts/resume_main_experiments.sh` |
 
-## 代码可读性基线
+## Code readability baseline
 
-- 模块文档字符串放在 `from __future__` 之前；公开函数说明输入、输出和关键不变量。
-- 优先使用 `pathlib.Path`、类型标注、数据类和具名常量，避免散落的路径、模型名和魔法数字。
-- 函数只承担一个可描述的职责；长流程拆成加载、校验、计算、写出四类步骤。
-- 修改配置路径或脚本名时，同步更新 CLI 默认值、Shell 调用、远程上传清单、README 和测试。
-- 提交前至少执行语法编译、命名规范测试和全量 `unittest`。
+- Put the module docstring before `from __future__` imports. Public functions
+  document inputs, outputs, side effects, and important invariants.
+- Prefer `pathlib.Path`, type annotations, data classes, and named constants over
+  scattered paths, model identifiers, and magic numbers.
+- Give each function one describable responsibility. Split long workflows into
+  loading, validation, computation, and output stages.
+- When a configuration path or script name changes, update CLI defaults, Shell
+  invocations, transfer manifests, documentation, and tests in the same change.
+- Before committing, run syntax compilation, naming checks, and the full
+  `unittest` suite.

@@ -149,10 +149,10 @@ class DeepWarningTests(unittest.TestCase):
             ensemble_seed_count=3,
         )
 
-        self.assertIn("2024（冻结时间确认）", report)
-        self.assertIn("3个随机种子", report)
-        self.assertIn("可判定90，删失10", report)
-        self.assertIn("回顾性锁定时间确认", report)
+        self.assertIn("2024 (frozen temporal confirmation)", report)
+        self.assertIn("3 random seeds", report)
+        self.assertIn("90 observable, and 10 censored", report)
+        self.assertIn("retrospective frozen temporal confirmation", report)
 
     def test_dynamic_model_columns_and_pairs_cover_all_baselines(self) -> None:
         models = ["patchtst", "timesnet", "itransformer"]

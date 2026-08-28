@@ -205,11 +205,11 @@ def main() -> None:
         ["delta_log_loss_vs_rec_none", "delta_pr_auc_vs_rec_none"]
     )
     report = [
-        "# 额外信息组合探索（2022年五折OOF）",
+        "# Additional-Information Combination Exploration (2022 Five-Fold OOF)",
         "",
-        "本结果只用于筛选待冻结假设。概率融合不等于已经训练了对应的联合特征模型。",
+        "These results only screen hypotheses for later freezing. Probability blending does not mean that the corresponding joint-feature model has been trained.",
         "",
-        "## 同时改善PR-AUC、LogLoss和Brier的前列组合",
+        "## Leading combinations that improve PR-AUC, Log Loss, and Brier score",
         "",
         top[
             [
@@ -224,9 +224,9 @@ def main() -> None:
             ]
         ].to_markdown(index=False)
         if not top.empty
-        else "没有满足条件的组合。",
+        else "No combination satisfies all criteria.",
         "",
-        "## 全体样本",
+        "## Full sample",
         "",
         overall[
             [
@@ -238,7 +238,7 @@ def main() -> None:
             ]
         ].head(15).to_markdown(index=False),
         "",
-        "## Hard-negative诊断",
+        "## Hard-negative diagnostic",
         "",
         hard[
             [

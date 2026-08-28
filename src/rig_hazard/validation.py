@@ -180,11 +180,11 @@ def validate_preprocessed(output_root_value: str | Path, strict: bool = True) ->
     add_failure(failures, bool(pd.to_numeric(station_catalog["station_index"], errors="coerce").duplicated().any()), "Duplicate station indexes")
     coordinate_missing = pd.to_numeric(station_catalog["longitude"], errors="coerce").isna() | pd.to_numeric(station_catalog["latitude"], errors="coerce").isna()
     if coordinate_missing.any():
-        warnings.append(f"{int(coordinate_missing.sum())}个站点缺少经纬度")
+        warnings.append(f"{int(coordinate_missing.sum())} stations are missing coordinates")
     elevation_missing = pd.to_numeric(station_catalog["elevation_m"], errors="coerce").isna()
     if elevation_missing.any():
         missing_codes = ", ".join(station_catalog.loc[elevation_missing, "station_code"].astype(str))
-        warnings.append(f"{int(elevation_missing.sum())}个站点缺少海拔：{missing_codes}")
+        warnings.append(f"{int(elevation_missing.sum())} stations are missing elevation: {missing_codes}")
     if "metadata_name_differs" in station_catalog:
         name_difference = pd.to_numeric(station_catalog["metadata_name_differs"], errors="coerce").fillna(0).eq(1)
         if name_difference.any():
@@ -192,7 +192,10 @@ def validate_preprocessed(output_root_value: str | Path, strict: bool = True) ->
                 f"{row.station_code}({row.station_name}/{row.metadata_station_name})"
                 for row in station_catalog.loc[name_difference, ["station_code", "station_name", "metadata_station_name"]].itertuples(index=False)
             )
-            warnings.append(f"以下站名与坐标元数据文本不同，已使用station_code连接：{difference_text}")
+            warnings.append(
+                "Station names differ from the coordinate metadata; records were joined "
+                f"by station_code: {difference_text}"
+            )
 
     candidate_path = output_root / "spatial_candidate_edges.csv"
     if candidate_path.is_file() and candidate_path.stat().st_size > 3:
@@ -230,23 +233,23 @@ def write_validation_outputs(output_root: Path, failures: list[str], warnings: l
     output_root.mkdir(parents=True, exist_ok=True)
     status = "PASS" if not failures else "FAIL"
     report_path = output_root / "validation_report.md"
-    metric_lines = "\n".join(f"- `{key}`：{value}" for key, value in metrics.items()) or "- 无。"
-    failure_lines = "\n".join(f"- {value}" for value in failures) or "- 无。"
-    warning_lines = "\n".join(f"- {value}" for value in warnings) or "- 无。"
-    report = f"""# RIG-Hazard预处理验证报告
+    metric_lines = "\n".join(f"- `{key}`: {value}" for key, value in metrics.items()) or "- None."
+    failure_lines = "\n".join(f"- {value}" for value in failures) or "- None."
+    warning_lines = "\n".join(f"- {value}" for value in warnings) or "- None."
+    report = f"""# RIG-Hazard Preprocessing Validation Report
 
-验证时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-状态：**{status}**
+Validated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Status: **{status}**
 
-## 核心计数
+## Core counts
 
 {metric_lines}
 
-## 失败项
+## Failures
 
 {failure_lines}
 
-## 警告项
+## Warnings
 
 {warning_lines}
 """

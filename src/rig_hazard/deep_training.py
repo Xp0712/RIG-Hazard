@@ -975,41 +975,41 @@ def build_deep_local_report(
     model_names = sorted({str(item["model_name"]) for item in metadata})
     display_names = {
         "gru": "GRU",
-        "tcn": "因果TCN",
+        "tcn": "Causal TCN",
         "patchtst": "PatchTST",
         "timesnet": "TimesNet",
         "itransformer": "iTransformer",
     }
-    model_description = "、".join(display_names.get(name, name) for name in model_names)
+    model_description = ", ".join(display_names.get(name, name) for name in model_names)
     selected = metrics.loc[
         metrics["horizon"].eq("6h") & metrics["calibration"].eq("calibrated"),
         ["model_name", "seed", "pr_auc", "brier_score", "log_loss", "ece", "roc_auc"],
     ].copy()
     return "\n".join(
         [
-            "# Deep RIG-Hazard非图时序基线报告",
+            "# Deep RIG-Hazard Non-Graph Temporal Baseline Report",
             "",
-            f"生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            f"运行层级：{run_tier}",
-            f"计算设备：{device}",
+            f"Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Run tier: {run_tier}",
+            f"Compute device: {device}",
             "",
-            "## 模型口径",
+            "## Model contract",
             "",
-            f"- 本次编码器为{model_description}，均只读取本站过去24小时动态特征，不读取邻站信息。",
-            "- 输出未来36个10分钟区间的条件离散hazard；事件发生或风险集退出后停止贡献似然。",
-            "- 所有区间hazard经cloglog映射后累计，因此1/3/6小时累计风险天然单调。",
-            "- 校准只使用一个共享的log-rate平移与斜率，不破坏多步hazard的一致性。",
-            "- local weather hazard在完全相同的开发样本上重算，避免24小时历史完整性筛选造成不公平比较。",
+            f"- The encoder is {model_description}; every model reads only the station's previous 24 hours of dynamic features and no neighboring-station information.",
+            "- The model outputs conditional discrete hazards for the next 36 ten-minute bins; likelihood contributions stop after an event or risk-set exit.",
+            "- Interval hazards are accumulated after the cloglog mapping, so 1-hour, 3-hour, and 6-hour cumulative risks are monotone by construction.",
+            "- Calibration uses one shared log-rate shift and slope and therefore preserves multi-step hazard consistency.",
+            "- Local weather hazard is recomputed on exactly the same development samples to prevent unfair comparisons caused by 24-hour history-completeness filtering.",
             "",
-            "## 6小时开发集结果",
+            "## Six-hour development-set results",
             "",
-            selected.to_markdown(index=False) if not selected.empty else "无。",
+            selected.to_markdown(index=False) if not selected.empty else "None.",
             "",
-            "## 解释边界",
+            "## Interpretation boundary",
             "",
-            "该阶段只用于2022训练、2023开发选择。2024已被查看，不用于结构或超参数选择；固定月误报预算下的事件提前量需要在后续完整时序预测阶段评估。",
+            "This stage uses 2022 for training and 2023 for development selection only. The 2024 data have been inspected and are not used for architecture or hyperparameter selection; event lead time under a fixed monthly false-alarm budget must be evaluated later on full-timeline predictions.",
             "",
-            f"已保存深度检查点：{len(metadata)}个。",
+            f"Saved deep checkpoints: {len(metadata)}.",
         ]
     ) + "\n"
 

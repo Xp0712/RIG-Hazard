@@ -1,7 +1,9 @@
-# 可视化目录
+# Visualization Directory
 
-本目录只存放集中导出的论文图、汇总图和对应的轻量图形数据。
+This directory contains centrally exported manuscript figures, summary figures,
+and their lightweight plotting data.
 
-- `manuscript_figures/`：论文主图、补充图及其图形数据。
-- 与单次实验强绑定的诊断图保留在对应 `results/<experiment>/` 目录，避免破坏报告引用。
-- 新的集中成图脚本默认写入本目录，不再写入 `results/`。
+- `manuscript_figures/` contains main and supplementary figures with source data.
+- Diagnostics tied to one experiment remain under the corresponding
+  `results/<experiment>/` directory so report references remain valid.
+- New central figure-generation scripts write here rather than under `results/`.

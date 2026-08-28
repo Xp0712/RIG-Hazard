@@ -809,30 +809,30 @@ def build_graph_report(
         lambda value: "" if pd.isna(value) else f"{float(value):.3g}"
     )
     lines = [
-        "# RIG-Hazard hierarchical/sparse-graph层次屏障与稀疏滞后图报告",
+        "# RIG-Hazard Hierarchical-Barrier and Sparse-Lag-Graph Report",
         "",
-        f"生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         "",
-        "## 模型定义",
+        "## Model definitions",
         "",
-        "- `local_weather_hazard`：不含站点结构的局地cloglog离散时间hazard。",
-        "- `hierarchical_barrier`：在局地线性预测量上联合估计城市效应与站点效应；L2部分池化将小样本站点收缩到城市层。",
-        "- `sparse_lag_graph`：在层次屏障结构上加入非负、L1稀疏的有向邻站滞后激励。图特征只读取发报时刻之前的源站信号。",
-        "- `sparse_lag_graph_ablation`：保留同一组局地与屏障参数，仅将图贡献置零，用于识别邻站增量。",
+        "- `local_weather_hazard`: local cloglog discrete-time hazard without station structure.",
+        "- `hierarchical_barrier`: jointly estimates city and station effects on the local linear predictor; L2 partial pooling shrinks small-sample stations toward their city level.",
+        "- `sparse_lag_graph`: adds nonnegative, L1-sparse directed neighbor-lag excitation to the hierarchical barrier. Graph features read only source-station signals before issue time.",
+        "- `sparse_lag_graph_ablation`: retains the same local and barrier parameters while setting graph contribution to zero to identify the neighbor increment.",
         "",
-        "## 防泄漏与验证口径",
+        "## Leakage prevention and validation contract",
         "",
-        f"- 训练：2022；图正则选择：{config['validation']['selection_start']}至{config['validation']['selection_end']}；校准与锁阈值：{config['validation']['calibration_start']}至{config['validation']['calibration_end']}；测试：2024。",
-        "- 源站异常强度的站内分位数、图系数、城市与站点效应全部只用2022年学习。",
-        "- 图正则在选择段确定；校准段不再选择模型；2024只做锁阈值测试。测试集匹配预算结果仅为诊断。",
+        f"- Training: 2022; graph-regularization selection: {config['validation']['selection_start']} through {config['validation']['selection_end']}; calibration and threshold locking: {config['validation']['calibration_start']} through {config['validation']['calibration_end']}; test: 2024.",
+        "- Within-source-station anomaly quantiles, graph coefficients, and city and station effects are all learned from 2022 only.",
+        "- Graph regularization is fixed in the selection segment; no model selection occurs in the calibration segment; 2024 only tests locked thresholds. Matched-budget test results are diagnostic.",
         "",
-        "## 训练设计",
+        "## Training design",
         "",
         "```json",
         json.dumps(training_summary, ensure_ascii=False, indent=2),
         "```",
         "",
-        "## 图正则选择",
+        "## Graph-regularization selection",
         "",
         markdown_table(
             selection_display.to_dict("records"),
@@ -849,20 +849,20 @@ def build_graph_report(
             ],
         ),
         "",
-        f"选择的图L1：`{selected_l1:.8g}`；有效边-滞后项：{selected_edges.shape[0]}；唯一有向边：{unique_edges}。",
+        f"Selected graph L1: `{selected_l1:.8g}`; active edge-lag terms: {selected_edges.shape[0]}; unique directed edges: {unique_edges}.",
         "",
-        "## 校准参数",
+        "## Calibration parameters",
         "",
         markdown_table(calibration_rows, ["model", "shift", "slope", "converged"]),
         "",
-        "## 2024概率指标（6小时）",
+        "## 2024 probability metrics (6 hours)",
         "",
         markdown_table(
             test_probability.to_dict("records"),
             ["model", "positives", "pr_auc", "brier_score", "brier_skill", "log_loss", "ece"],
         ),
         "",
-        "## 事件预警指标",
+        "## Event-warning metrics",
         "",
         markdown_table(
             warning_subset.to_dict("records"),
@@ -878,7 +878,7 @@ def build_graph_report(
             ],
         ),
         "",
-        "## 事件级配对检验",
+        "## Paired event-level tests",
         "",
         markdown_table(
             paired_comparisons.to_dict("records"),
@@ -895,33 +895,33 @@ def build_graph_report(
             ],
         ),
         "",
-        "`common_hit_lead_difference_hours`只比较两个模型都命中的同一事件；`lead_utility_difference_hours`将漏报事件记为0小时，兼顾命中与提前量。置信区间按站点聚类bootstrap。论文判断使用2023锁定阈值，测试集匹配预算只作诊断。",
+        "`common_hit_lead_difference_hours` compares only events hit by both models; `lead_utility_difference_hours` assigns zero hours to misses and combines hit rate with lead time. Confidence intervals use station-cluster bootstrap. Confirmatory interpretation uses thresholds locked in 2023; matched-budget test results are diagnostic only.",
         "",
-        "## 主要稀疏边",
+        "## Leading sparse edges",
         "",
         markdown_table(
             top_edges.to_dict("records"),
             ["source_station_code", "target_station_code", "lag_minutes", "distance_km", "coefficient"],
         )
         if not top_edges.empty
-        else "没有图系数超过非零阈值。",
+        else "No graph coefficient exceeds the nonzero threshold.",
         "",
-        "## 当前判断",
+        "## Conclusions",
         "",
-        f"1. 训练期最终保留{selected_edges.shape[0]}个边-滞后项、{unique_edges}条唯一有向边。",
+        f"1. Training retains {selected_edges.shape[0]} edge-lag terms and {unique_edges} unique directed edges.",
         (
-            "2. 在2023同误报预算锁定的阈值及同事件站点聚类检验下，邻站图获得了至少0.1小时且95%区间下界大于0的共同命中提前量，当前数据支持邻站更早信号。"
+            "2. Under the 2023 matched-false-alarm threshold and paired station-cluster test, the neighbor graph improves common-hit lead time by at least 0.1 hours with a positive 95% lower bound; the current data support an earlier neighbor signal."
             if neighbor_supported
-            else "2. 邻站图未同时满足至少0.1小时共同命中提前量与95%区间下界大于0，当前不能宣称邻站信号显著早于本站历史。"
+            else "2. The neighbor graph does not simultaneously achieve at least 0.1 hours of common-hit lead-time improvement and a positive 95% lower bound; the current data do not support a significantly earlier neighbor signal than local history."
         ),
         (
-            "3. 2024未见站点的图贡献严格为0，模型按设计退化到城市层屏障与局地hazard。"
+            "3. Graph contribution is exactly zero for unseen stations in 2024, so the model falls back to the city-level barrier and local hazard as designed."
             if unseen_safe
-            else "3. 未见站点出现非零图贡献，需检查图索引或数据泄漏。"
+            else "3. Unseen stations have a nonzero graph contribution; inspect graph indexing or data leakage."
         ),
-        "4. 正则选择、校准与测试在本轮中已经分离；但2024结果现已被查看。任何据此开展的下一轮结构修改都必须使用新的年份、外部区域或嵌套滚动验证，不能再把2024称为未触碰的最终测试集。",
+        "4. Regularization selection, calibration, and testing are separated in this run, but the 2024 results have now been inspected. Any subsequent structural change motivated by them requires a new year, external region, or nested rolling validation; 2024 can no longer be called an untouched final test set.",
         "",
-        f"完整产物位于：`{resolve_project_path(config['output_root'])}`",
+        f"Complete artifacts: `{resolve_project_path(config['output_root'])}`",
     ]
     return "\n".join(lines) + "\n"
 

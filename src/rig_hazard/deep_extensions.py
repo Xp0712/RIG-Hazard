@@ -421,53 +421,53 @@ def build_extension_report(
         variant_rows.append(
             {
                 "variant_name": name,
-                "复发史输入": "移除" if spec["masked_features"] else "保留",
-                "负样本策略": spec["negative_sampling"],
-                "层次屏障": "是" if spec["hierarchical_barrier"] else "否",
+                "recurrence_history_input": "removed" if spec["masked_features"] else "retained",
+                "negative_sampling": spec["negative_sampling"],
+                "hierarchical_barrier": "yes" if spec["hierarchical_barrier"] else "no",
             }
         )
     barrier_note = (
-        f"已输出{barrier_effects.shape[0]}条城市/站点屏障效应。"
+        f"Exported {barrier_effects.shape[0]} city/station barrier effects."
         if not barrier_effects.empty
-        else "本次运行未包含层次屏障变体。"
+        else "This run does not include a hierarchical-barrier variant."
     )
     return "\n".join(
         [
-            "# Deep RIG-Hazard复发史与层次屏障实验",
+            "# Deep RIG-Hazard Recurrence-History and Hierarchical-Barrier Experiment",
             "",
-            f"生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            f"运行层级：{run_tier}",
-            f"计算设备：{device}",
+            f"Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Run tier: {run_tier}",
+            f"Compute device: {device}",
             "",
-            "## 变体口径",
+            "## Variant contract",
             "",
             pd.DataFrame(variant_rows).to_markdown(index=False),
             "",
-            "- 去复发史变体只屏蔽距上次覆冰时间及其缺失标记，并从头重训；风险段编号不作为模型输入。",
-            "- 普通负样本变体保留全部临近事件窗口，在其余负样本中等概率抽样，并用逆概率权重恢复总体目标。",
-            "- 层次屏障是跨36个未来区间共享的城市与站点加性log-hazard效应，分别向0收缩。",
+            "- The recurrence-removed variant masks only time since previous icing and its missingness indicator, then retrains from scratch; the risk-segment identifier is not a model input.",
+            "- The ordinary-negative variant retains every near-event window, samples the remaining negatives uniformly, and uses inverse-probability weights to recover the population target.",
+            "- The hierarchical barrier consists of additive city and station log-hazard effects shared across all 36 future bins and separately shrunk toward zero.",
             "",
-            "## 6小时开发集概率结果",
+            "## Six-hour development-set probability results",
             "",
-            selected.to_markdown(index=False) if not selected.empty else "无。",
+            selected.to_markdown(index=False) if not selected.empty else "None.",
             "",
-            "## 五种子汇总",
+            "## Five-seed summary",
             "",
             summary.loc[
                 summary["calibration"].eq("calibrated") & summary["horizon"].eq("6h")
             ].to_markdown(index=False),
             "",
-            "## 相对严格对照的配对种子差异",
+            "## Paired seed differences from the strict reference",
             "",
             paired_differences.to_markdown(index=False),
             "",
-            "## 屏障输出",
+            "## Barrier output",
             "",
             barrier_note,
             "",
-            "## 解释边界",
+            "## Interpretation boundary",
             "",
-            "本阶段仍只使用2022训练与2023开发。概率门控通过后还需在完整时序上进行同误报事件比较；2024不参与变体或正则选择。",
+            "This stage still uses 2022 for training and 2023 for development only. After the probability gate passes, a matched-false-alarm event comparison on the full timeline is still required; 2024 does not influence variant or regularization selection.",
         ]
     ) + "\n"
 

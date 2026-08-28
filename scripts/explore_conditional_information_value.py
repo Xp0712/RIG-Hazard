@@ -520,12 +520,12 @@ def main() -> None:
         ascending=[True, False],
     ).head(12)
     report = [
-        "# 条件增量信息探索（2022年五折OOF）",
+        "# Conditional Incremental-Information Exploration (2022 Five-Fold OOF)",
         "",
-        "本结果用于提出假设，不是2023/2024冻结确认结论。普通accuracy不适合极稀有事件，",
-        "因此以PR-AUC、LogLoss、Brier和ECE为主。",
+        "These results generate hypotheses and are not frozen confirmation from 2023 or 2024.",
+        "Ordinary accuracy is unsuitable for extremely rare events, so the primary metrics are PR-AUC, Log Loss, Brier score, and ECE.",
         "",
-        "## 条件子群中LogLoss改善最大的组合",
+        "## Largest Log-Loss improvements within conditional subgroups",
         "",
         top[
             [
@@ -540,7 +540,7 @@ def main() -> None:
             ]
         ].to_markdown(index=False),
         "",
-        "## 探索性条件门控",
+        "## Exploratory conditional gate",
         "",
         selected[
             [
@@ -555,7 +555,7 @@ def main() -> None:
             ]
         ].to_markdown(index=False)
         if not selected.empty
-        else "没有候选同时改善LogLoss与Brier且不降低PR-AUC。",
+        else "No candidate improves both Log Loss and Brier score without reducing PR-AUC.",
     ]
     (output_root / "conditional_information_exploration_report.md").write_text(
         "\n".join(report) + "\n", encoding="utf-8"

@@ -271,19 +271,19 @@ def build_graph_gate_report(
     comparisons = results["graph_gate_comparisons"]
     return "\n".join(
         [
-            "# Deep RIG-Hazard稳定图进入门控",
+            "# Deep RIG-Hazard Stable-Graph Entry Gate",
             "",
-            f"生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             "",
-            "## 设计",
+            "## Design",
             "",
-            "- 只使用2023开发年；所有候选在总体10小时/站点月误报下比较。",
-            "- 原稳定图与同一模型的图贡献置零版本比较。",
-            "- 额外滞后6小时、错位7天和站点置换均保持局地与层次项不变，只破坏图贡献的正确时空对齐。",
-            "- 未来6小时正对照故意读取未来信息，仅检查方向性，不属于可用模型。",
-            f"- 图贡献非零比例：{diagnostics['graph_nonzero_fraction']:.4f}。",
+            "- Use the 2023 development year only; compare all candidates at an aggregate 10-hour false-alarm budget per station-month.",
+            "- Compare the original stable graph with the same model after setting its graph contribution to zero.",
+            "- Additional 6-hour lag, 7-day misalignment, and station permutation controls preserve local and hierarchical terms while disrupting graph alignment.",
+            "- The positive 6-hour future control intentionally reads future information to verify directionality and is not a usable model.",
+            f"- Nonzero graph-contribution fraction: {diagnostics['graph_nonzero_fraction']:.4f}.",
             "",
-            "## 同误报结果",
+            "## Matched-false-alarm results",
             "",
             metrics[
                 [
@@ -296,20 +296,20 @@ def build_graph_gate_report(
                 ]
             ].to_markdown(index=False),
             "",
-            "## 配对站点聚类Bootstrap",
+            "## Paired station-cluster bootstrap",
             "",
             comparisons[
                 ["model_a_name", "model_b_name", "metric", "estimate", "ci95_low", "ci95_high"]
             ].to_markdown(index=False),
             "",
-            "## 门控决定",
+            "## Gate decision",
             "",
-            f"- 主要增量门槛：{'通过' if decision['primary_increment_passed'] else '未通过'}。",
-            f"- 安慰剂分离门槛：{'通过' if decision['placebo_separation_passed'] else '未通过'}。",
-            f"- 总门槛：{'通过' if decision['gate_passed'] else '未通过'}。",
-            f"- 决策：`{decision['decision']}`。",
+            f"- Primary-increment gate: {'passed' if decision['primary_increment_passed'] else 'failed'}.",
+            f"- Placebo-separation gate: {'passed' if decision['placebo_separation_passed'] else 'failed'}.",
+            f"- Overall gate: {'passed' if decision['gate_passed'] else 'failed'}.",
+            f"- Decision: `{decision['decision']}`.",
             "",
-            "门控未通过时，不训练深度图分支；这不是工程未完成，而是预先规定的防过拟合停止规则。",
+            "If the gate fails, the deep graph branch is not trained; this is a prespecified anti-overfitting stop rule, not incomplete implementation.",
         ]
     ) + "\n"
 

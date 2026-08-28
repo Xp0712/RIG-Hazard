@@ -706,51 +706,51 @@ def build_warning_report(
         "hard_negative_far",
     ]
     evaluation_role = {
-        2023: "跨年份验证",
-        2024: "冻结时间确认",
-    }.get(int(evaluation_year), "冻结时序评价")
-    model_labels = "、".join(ensemble_model_names or ["GRU", "TCN"])
+        2023: "cross-year validation",
+        2024: "frozen temporal confirmation",
+    }.get(int(evaluation_year), "frozen temporal evaluation")
+    model_labels = ", ".join(ensemble_model_names or ["GRU", "TCN"])
     sections = [
-        "# Deep RIG-Hazard完整时序预警评估",
+        "# Deep RIG-Hazard Full-Timeline Warning Evaluation",
         "",
-        f"生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        f"评价年份：{evaluation_year}（{evaluation_role}）",
+        f"Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Evaluation year: {evaluation_year} ({evaluation_role})",
         "",
-        "## 冻结口径",
+        "## Frozen contract",
         "",
-        "- 模型选择、概率校准与告警预算选择仅使用2022区块交叉验证的折外预测。",
-        f"- 统计基线来源：{baseline_source or '配置中冻结的local weather hazard危害率模型'}。",
-        f"- {model_labels}均为{ensemble_seed_count}个随机种子校准概率的等权集成。",
-        f"- 每站每月总告警硬上限固定为{budget_config.monthly_budget_hours:.1f}小时。",
-        f"- {evaluation_year}年的模型参数、校准器和预算参数保持冻结，不读取该年标签进行调整。",
-        "- 预算控制在完整时间线上执行；误报、硬负样本和事件指标只在6小时结局完整可判定的窗口上评分。",
+        "- Model selection, probability calibration, and alert-budget selection use only out-of-fold predictions from 2022 blocked cross-validation.",
+        f"- Statistical baseline source: {baseline_source or 'the local weather hazard model frozen in the configuration'}.",
+        f"- Each of {model_labels} is an equal-weight ensemble of calibrated probabilities from {ensemble_seed_count} random seeds.",
+        f"- The hard limit for total alert time is fixed at {budget_config.monthly_budget_hours:.1f} hours per station-month.",
+        f"- Model parameters, calibrators, and budget parameters remain frozen in {evaluation_year}; labels from that year do not adjust them.",
+        "- Budget control runs on the full timeline; false alarms, hard negatives, and event metrics are scored only where the full 6-hour outcome is observable.",
     ]
     if budget_configs_by_score:
         quantile_summary = "；".join(
             f"{score.removesuffix('_6h')}={value.candidate_quantile:.4f}"
             for score, value in budget_configs_by_score.items()
         )
-        sections.append(f"- 2022折外冻结的模型候选分位数：{quantile_summary}。")
+        sections.append(f"- Candidate quantiles frozen from 2022 OOF predictions: {quantile_summary}.")
     coverage_columns = ["total_time_bins", "observed_time_bins", "censored_time_bins"]
     if set(coverage_columns).issubset(metrics.columns) and not metrics.empty:
         coverage = metrics.iloc[0]
         sections.extend(
             [
-                f"- 时间窗审计：总计{int(coverage['total_time_bins'])}，可判定{int(coverage['observed_time_bins'])}，删失{int(coverage['censored_time_bins'])}。",
+                f"- Timeline audit: {int(coverage['total_time_bins'])} total bins, {int(coverage['observed_time_bins'])} observable, and {int(coverage['censored_time_bins'])} censored.",
             ]
         )
     sections.extend(
         [
             "",
-            "## 事件结果",
+            "## Event results",
             "",
             metrics[columns].to_markdown(index=False),
             "",
-            "## 配对站点聚类Bootstrap",
+            "## Paired station-cluster bootstrap",
             "",
             comparisons[["model_a_name", "model_b_name", "metric", "estimate", "ci95_low", "ci95_high"]].to_markdown(index=False),
             "",
-            "## 月预算审计",
+            "## Monthly budget audit",
             "",
             audit.to_markdown(index=False),
         ]
@@ -777,37 +777,37 @@ def build_warning_report(
         sections.extend(
             [
                 "",
-                "## 严格同误报时长诊断",
+                "## Strict matched-false-alarm diagnostic",
                 "",
-                f"- 每个模型在{evaluation_year}年单独选择6小时风险阈值，使总体误报时长尽可能贴近{target_hours:.1f}小时/站点月。",
-                f"- 该阈值使用了完整{evaluation_year}年标签，只用于判断模型在同一误报代价下的相对能力，不是可部署阈值，也不进入后续年份。",
-                "- 该口径匹配总体误报时长，不施加逐站逐月硬上限；逐月偏离情况见后续审计。",
+                f"- Each model selects its own 6-hour risk threshold in {evaluation_year} to match aggregate false-alarm time as closely as possible to {target_hours:.1f} hours per station-month.",
+                f"- This threshold uses all labels from {evaluation_year} only to compare relative capability at the same false-alarm cost. It is not deployable and is not carried into a later year.",
+                "- This contract matches aggregate false-alarm time without a station-month hard limit; the subsequent audit reports monthly deviations.",
                 "",
                 matched_metrics[matched_columns].to_markdown(index=False),
                 "",
-                "### 阈值匹配误差",
+                "### Threshold-matching error",
                 "",
                 matched_selection.to_markdown(index=False),
                 "",
-                "### 配对站点聚类Bootstrap",
+                "### Paired station-cluster bootstrap",
                 "",
                 matched_comparisons[
                     ["model_a_name", "model_b_name", "metric", "estimate", "ci95_low", "ci95_high"]
                 ].to_markdown(index=False),
                 "",
-                "### 逐月分布审计",
+                "### Monthly distribution audit",
                 "",
                 matched_audit.to_markdown(index=False),
             ]
         )
     boundary = (
-        "2023结果只用于跨年份稳定性验证，不得据此重新拟合模型、校准概率或选择预算。"
+        "The 2023 results are only a cross-year stability evaluation and must not be used to refit models, recalibrate probabilities, or select budgets."
         if int(evaluation_year) == 2023
-        else "2024结果按回顾性锁定时间确认解释，不得用于重新调参；若要宣称从未查看的独立测试，仍需新增年份或外部区域数据。"
+        else "The 2024 results are interpreted as retrospective frozen temporal confirmation and must not be used for retuning. A genuinely unseen independent test still requires a new year or external region."
         if int(evaluation_year) == 2024
-        else "该年份结果仅按预先指定的冻结时序评价解释，不得反向调整模型。"
+        else "Results for this year are interpreted only under the prespecified frozen temporal evaluation and must not feed back into the model."
     )
-    sections.extend(["", "## 解释边界", "", boundary])
+    sections.extend(["", "## Interpretation boundary", "", boundary])
     return "\n".join(sections) + "\n"
 
 

@@ -306,12 +306,12 @@ def main() -> None:
         heterogeneity["condition"].eq("all_rows")
     ].sort_values("stations_improved_brier_fraction", ascending=False)
     report = [
-        "# 为什么多数复发信息不能提高模型性能",
+        "# Why Most Recurrence Information Does Not Improve Model Performance",
         "",
-        "Brier差值被精确分解为“概率移动成本 + 对rec_none残差的修正”。",
-        "移动成本始终非负；只有残差修正足够为负时，额外信息才有净收益。",
+        "The Brier-score difference is decomposed exactly into probability-shift cost plus correction of the `rec_none` residual.",
+        "Shift cost is always nonnegative; additional information has a net benefit only when the residual correction is sufficiently negative.",
         "",
-        "## 全体样本分解",
+        "## Full-sample decomposition",
         "",
         overall[
             [
@@ -325,7 +325,7 @@ def main() -> None:
             ]
         ].to_markdown(index=False),
         "",
-        "## 细分gap窗口",
+        "## Fine-grained gap windows",
         "",
         fine_gap[
             [
@@ -340,7 +340,7 @@ def main() -> None:
             ]
         ].to_markdown(index=False),
         "",
-        "## 站点异质性",
+        "## Station heterogeneity",
         "",
         station_overall[
             [
@@ -353,9 +353,9 @@ def main() -> None:
             ]
         ].to_markdown(index=False),
         "",
-        "## 2023条件置乱交叉证据",
+        "## Conditional-permutation cross-evidence for 2023",
         "",
-        attribution.to_markdown(index=False) if not attribution.empty else "没有可用归因结果。",
+        attribution.to_markdown(index=False) if not attribution.empty else "No attribution results are available.",
     ]
     (output_root / "failure_mechanism_report.md").write_text(
         "\n".join(report) + "\n", encoding="utf-8"

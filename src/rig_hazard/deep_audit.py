@@ -364,7 +364,7 @@ def diagnose_stable_graph(config: dict[str, Any]) -> tuple[dict[str, Any], pd.Da
 
 def markdown_table(frame: pd.DataFrame, columns: list[str], limit: int = 100) -> str:
     if frame.empty:
-        return "无。"
+        return "None."
     subset = frame.loc[:, [column for column in columns if column in frame.columns]].head(limit)
     lines = ["| " + " | ".join(subset.columns) + " |", "| " + " | ".join(["---"] * subset.shape[1]) + " |"]
     for row in subset.itertuples(index=False, name=None):
@@ -380,17 +380,17 @@ def build_audit_report(
     removed_edges: pd.DataFrame,
 ) -> str:
     lines = [
-        "# Deep RIG-Hazard 模型合同与样本口径审计",
+        "# Deep RIG-Hazard Model-Contract and Sample-Scope Audit",
         "",
-        f"生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         "",
-        "## 冻结范围",
+        "## Frozen scope",
         "",
-        f"- 已冻结并计算SHA-256的文件：{manifest.shape[0]}个，总计{int(manifest['bytes'].sum())}字节。",
-        "- 范围包括事件与特征契约、归一化参数、local weather hazard/unfiltered/stable-graph模型包、正式预测、预算预测、指标、配置和当前源代码。",
-        "- 2024结果已经被查看，只能作为已开发的描述性跨年评价；后续深度模型不得据此选择结构或超参数。",
+        f"- Files frozen with SHA-256: {manifest.shape[0]}, totaling {int(manifest['bytes'].sum())} bytes.",
+        "- The scope includes event and feature contracts, normalization parameters, local-weather-hazard, unfiltered-graph, and stable-graph model bundles, formal and budget predictions, metrics, configuration, and current source code.",
+        "- The 2024 results have already been inspected and are descriptive cross-year evidence; later deep models must not use them for architecture or hyperparameter selection.",
         "",
-        "## 运行环境",
+        "## Runtime environment",
         "",
         "```json",
         json.dumps(
@@ -407,17 +407,17 @@ def build_audit_report(
         ),
         "```",
         "",
-        "## 数量流转",
+        "## Sample flow",
         "",
         markdown_table(sample_flow, ["stage", "statistical_unit", "scope", "count", "filter"], limit=200),
         "",
-        "## stable graph受限重拟合诊断",
+        "## Stable-graph constrained-refit diagnostics",
         "",
         "```json",
         json.dumps(diagnostics, ensure_ascii=False, indent=2),
         "```",
         "",
-        "### 被稳定性筛选移除的原unfiltered graph图项",
+        "### Original unfiltered-graph terms removed by stability selection",
         "",
         markdown_table(
             removed_edges,
@@ -432,12 +432,12 @@ def build_audit_report(
             limit=100,
         ),
         "",
-        "## 模型合同审计结论",
+        "## Model-contract conclusions",
         "",
-        "1. 当前统计基线及其正式预测已经用文件哈希冻结，后续深度模型必须使用相同事件、风险集与切分口径。",
-        "2. stable graph一次迭代应结合投影热启动、系数差异和预测排序共同解释，不能仅凭迭代次数认定训练失败。",
-        "3. 深度阶段首先比较非图GRU/TCN hazard与local weather hazard；图分支只有在非图编码器通过后才进入实验。",
-        "4. 新模型选择只能使用2022训练和2023开发数据；真正最终结论需要新年份或外部区域。",
+        "1. File hashes freeze the statistical baselines and their formal predictions; later deep models must use the same events, risk set, and data splits.",
+        "2. Interpret a one-iteration stable-graph refit using its projected warm start, coefficient differences, and prediction ranking rather than iteration count alone.",
+        "3. The deep stage first compares non-graph GRU/TCN hazards with local weather hazard; graph branches proceed only after a non-graph encoder passes its gate.",
+        "4. New model selection may use only 2022 training and 2023 development data; final confirmation requires a new year or external region.",
     ]
     return "\n".join(lines) + "\n"
 

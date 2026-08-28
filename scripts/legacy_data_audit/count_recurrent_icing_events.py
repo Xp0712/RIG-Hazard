@@ -12,20 +12,20 @@ from typing import Any, Iterable
 import pandas as pd
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-DATA_ROOT = PROJECT_ROOT / "(林立铮2025.6.21)凝结类天气数据"
-OUTPUT_ROOT = PROJECT_ROOT / "起冰事件统计"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_ROOT = PROJECT_ROOT / "data" / "meteorology_raw"
+OUTPUT_ROOT = PROJECT_ROOT / "results" / "legacy_exploration" / "icing_event_statistics"
 
-TIME_COL = "观测时间"
-STATION_COL = "站点名称"
-STATION_CODE_COL = "站点编号"
-STATION_ID_COL = "站点ID"
-ICE_THICKNESS_COL = "覆冰厚度"
-TEMP_COL = "气温"
-RH_COL = "相对湿度"
-VIS_COL = "能见度"
-VIS1_COL = "一分钟能见度"
-VIS_OBSTACLE_COL = "视程障碍"
+TIME_COL = "\u89c2\u6d4b\u65f6\u95f4"
+STATION_COL = "\u7ad9\u70b9\u540d\u79f0"
+STATION_CODE_COL = "\u7ad9\u70b9\u7f16\u53f7"
+STATION_ID_COL = "\u7ad9\u70b9ID"
+ICE_THICKNESS_COL = "\u8986\u51b0\u539a\u5ea6"
+TEMP_COL = "\u6c14\u6e29"
+RH_COL = "\u76f8\u5bf9\u6e7f\u5ea6"
+VIS_COL = "\u80fd\u89c1\u5ea6"
+VIS1_COL = "\u4e00\u5206\u949f\u80fd\u89c1\u5ea6"
+VIS_OBSTACLE_COL = "\u89c6\u7a0b\u969c\u788d"
 
 READ_COLS = [
     TIME_COL,
@@ -41,7 +41,15 @@ READ_COLS = [
 ]
 
 MISSING_MARKERS = {"", "--", "nan", "NaN", "NAN", "null", "NULL", "None", "none"}
-CITY_PREFIXES = ["武夷山", "龙岩", "泉州", "宁德", "南平", "三明"]
+CITY_PREFIXES = [
+    "\u6b66\u5937\u5c71",
+    "\u9f99\u5ca9",
+    "\u6cc9\u5dde",
+    "\u5b81\u5fb7",
+    "\u5357\u5e73",
+    "\u4e09\u660e",
+]
+RAW_FOG_TOKEN = "\u96fe"
 
 
 @dataclass
@@ -188,11 +196,11 @@ def infer_city(station: str) -> str:
     for prefix in CITY_PREFIXES:
         if station.startswith(prefix):
             return prefix
-    return "未识别"
+    return "Unknown"
 
 
 def infer_year(path: Path) -> str:
-    match = re.search(r"(20\d{2})年", str(path.parent))
+    match = re.search(r"(20\d{2})", str(path.parent))
     return match.group(1) if match else ""
 
 
@@ -355,50 +363,50 @@ def build_report(events: list[dict[str, Any]], station_rows: list[dict[str, Any]
         "enough_ge_10_cold_events",
     ]
 
-    return f"""# 同站点复发起冰事件数据量判断
+    return f"""# Recurrent Icing Event Volume by Station
 
-生成时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+Generated at: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
-## 事件定义
+## Event definitions
 
-- 独立起冰事件：`覆冰厚度 > 0` 的连续记录；相邻正覆冰记录间隔不超过 {merge_gap_minutes} 分钟时合并为同一事件。
-- 冷条件可信事件：独立事件中，事件期间最低气温 `<= 2℃`。该口径用于剔除部分暖季或高温下疑似传感器异常的覆冰厚度正值。
-- 冻结可信事件：独立事件中，事件期间最低气温 `<= 0℃`，作为更严格口径。
+- Independent icing event: consecutive records with ice thickness greater than zero; positive records separated by no more than {merge_gap_minutes} minutes are merged into one event.
+- Cold-plausible event: an independent event with a minimum temperature no greater than 2 °C. This rule removes some warm-season or high-temperature positives likely caused by sensor anomalies.
+- Freezing-plausible event: an independent event with a minimum temperature no greater than 0 °C, used as a stricter definition.
 
-## 总体结论
+## Overall results
 
-- 全部 `覆冰厚度 > 0` 独立事件：{len(events):,} 次。
-- 冷条件可信独立起冰事件：{len(cold_events):,} 次。
-- 冻结可信独立起冰事件：{len(freezing_events):,} 次。
-- 有覆冰事件的站点：{station_count} 个；有冷条件可信事件的站点：{cold_station_count} 个。
-- 全部覆冰正记录分钟：{total_ice_minutes:,} 分钟；冷条件可信覆冰正记录分钟：{cold_ice_minutes:,} 分钟。
-- 至少 5 次冷条件可信起冰事件的站点：{ge5} 个。
-- 至少 10 次冷条件可信起冰事件的站点：{ge10} 个。
-- 至少 20 次冷条件可信起冰事件的站点：{ge20} 个。
+- Independent positive-thickness events: {len(events):,}.
+- Cold-plausible independent icing events: {len(cold_events):,}.
+- Freezing-plausible independent icing events: {len(freezing_events):,}.
+- Stations with icing events: {station_count}; stations with cold-plausible events: {cold_station_count}.
+- Positive-icing observation minutes: {total_ice_minutes:,}; cold-plausible positive-icing minutes: {cold_ice_minutes:,}.
+- Stations with at least 5 cold-plausible events: {ge5}.
+- Stations with at least 10 cold-plausible events: {ge10}.
+- Stations with at least 20 cold-plausible events: {ge20}.
 
-## 年度分布
+## Annual distribution
 
 {markdown_table(year_rows, ["year", "all_events", "cold_plausible_events_min_temp_le_2", "stations_with_cold_plausible_events", "cold_plausible_ice_observation_minutes"], 10)}
 
-## 冷条件可信事件最多的站点
+## Stations with the most cold-plausible events
 
 {markdown_table(station_rows, top_cols, 32)}
 
-## 判断
+## Interpretation
 
-若论文主线要求“同站点存在复发起冰事件”，建议使用 `冷条件可信事件` 作为主口径。判断标准可设为：
+Use cold-plausible events as the primary definition when the manuscript argument requires recurrent icing at the same station. Suggested evidence thresholds are:
 
-- `>=5` 次：可用于站点级案例和复发性论证。
-- `>=10` 次：可用于站点屏障或站点异质性建模。
-- `>=20` 次：可用于较稳健的站点级统计评估。
+- `>=5`: station-level case study and recurrence evidence.
+- `>=10`: station-barrier or station-heterogeneity modelling.
+- `>=20`: more robust station-level statistical evaluation.
 
-完整事件表见 `icing_events.csv`；站点汇总见 `station_event_summary.csv`；站点-年份汇总见 `station_year_event_summary.csv`。
+See `icing_events.csv` for the full event table, `station_event_summary.csv` for station summaries, and `station_year_event_summary.csv` for station-year summaries.
 """
 
 
 def markdown_table(rows: list[dict[str, Any]], cols: list[str], max_rows: int) -> str:
     if not rows:
-        return "无。"
+        return "None."
     rows = rows[:max_rows]
     lines = ["| " + " | ".join(cols) + " |", "| " + " | ".join(["---"] * len(cols)) + " |"]
     for row in rows:
@@ -448,7 +456,7 @@ def count_events(max_files: int | None, chunksize: int, merge_gap_minutes: int) 
             rh = numeric(chunk[RH_COL])
             vis = numeric(chunk[VIS_COL])
             obstacle = clean_text(chunk[VIS_OBSTACLE_COL])
-            exposure = ((temp <= 2) & (rh >= 95)) | (vis < 1000) | obstacle.str.contains("雾", regex=False, na=False)
+            exposure = ((temp <= 2) & (rh >= 95)) | (vis < 1000) | obstacle.str.contains(RAW_FOG_TOKEN, regex=False, na=False)
             positive = (ice > 0) & times.notna()
             if not positive.any():
                 continue
