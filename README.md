@@ -59,6 +59,39 @@ controller and offline evaluator split alert segments at observed event
 boundaries so that capacity settlement and false-alarm auditing use the same
 segment definition.
 
+## Probability-model baseline comparison
+
+The primary probability model was compared with five temporal encoders under a
+fair protocol: all models use the same cached samples, temporal folds, random
+seeds, training settings, recurrence-feature masks, 6-hour horizon, and
+calibration procedure.
+
+| Model | 2022 OOF PR-AUC | 2023 PR-AUC | 2024 PR-AUC | 2023 Log Loss | 2024 Log Loss |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `local_weather_hazard` | **0.2609** | 0.1866 | **0.1692** | **0.00967** | 0.01340 |
+| GRU | 0.2600 | **0.2029** | 0.1679 | 0.00979 | 0.01379 |
+| TimesNet | 0.2414 | 0.1963 | 0.1612 | 0.00984 | **0.01303** |
+| PatchTST | 0.1919 | 0.1572 | 0.1292 | 0.01244 | 0.01640 |
+| TCN | 0.1625 | 0.1723 | 0.1457 | 0.01008 | 0.01413 |
+| iTransformer | 0.1819 | 0.1802 | 0.1582 | 0.01111 | 0.01512 |
+
+GRU has the highest 2023 PR-AUC, and TimesNet has the lowest 2024 Log Loss, but
+neither gain is stable across years and metrics. `local_weather_hazard` has the
+highest selection-year OOF PR-AUC, the highest 2024 PR-AUC, and the lowest 2023
+Log Loss. It therefore remains the frozen primary model rather than being
+replaced after inspecting later years.
+
+The canonical comparison table is
+`results/recurrence_modeling/fair_baselines/fair_baseline_summary.csv`. The
+underlying OOF and frozen-year metrics are in `oof_metrics.csv` and
+`locked_year_metrics.csv` in the same directory. Recurrence-feature comparisons
+and exact paired station bootstrap results are stored under
+`results/recurrence_modeling/probability_models/` and
+`results/recurrence_modeling/paired_station_bootstrap/`, respectively. Full
+interpretation, including rules, classifiers, hazard models, and
+recurrence-history ablations, is provided in
+[docs/results_analysis.md](docs/results_analysis.md#3-predictive-information).
+
 ## Repository layout
 
 ```text
